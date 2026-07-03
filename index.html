@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paradigmas de Produtos — Concorrentes Giannini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0f11;
+    --surface:#15171a;
+    --surface-2:#1b1e22;
+    --border:#2a2d33;
+    --border-soft:#212327;
+    --text:#e9eaec;
+    --text-dim:#9a9da4;
+    --text-faint:#5c5f66;
+    --teal:#14b8a6;
+    --teal-dim:rgba(20,184,166,.15);
+    --purple:#8b5cf6;
+    --purple-dim:rgba(139,92,246,.15);
+    --amber:#f59e0b;
+    --amber-dim:rgba(245,158,11,.15);
+    --radius:16px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(139,92,246,.10), transparent 60%),
+      radial-gradient(ellipse 900px 600px at 90% 10%, rgba(20,184,166,.08), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'DM Mono', monospace;
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+
+  h1,h2,h3,.font-display{ font-family:'Syne', sans-serif; }
+
+  /* ---------- Layout shell ---------- */
+  .wrap{ max-width:880px; margin:0 auto; padding:48px 24px 0; }
+
+  /* ---------- Header ---------- */
+  header{ text-align:center; margin-bottom:36px; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--teal); background:var(--teal-dim);
+    border:1px solid rgba(20,184,166,.3);
+    padding:6px 14px; border-radius:999px; margin-bottom:18px;
+  }
+  header h1{
+    font-size:clamp(28px,5vw,44px); font-weight:800; margin:0 0 10px;
+    background:linear-gradient(90deg,#fff, #cfd2d8 55%, var(--teal));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    letter-spacing:-.02em;
+  }
+  header p{ color:var(--text-dim); font-size:14.5px; max-width:520px; margin:0 auto; line-height:1.6; }
+
+  /* ---------- Progress bar ---------- */
+  .progress-shell{
+    margin:32px 0 8px; background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:16px 20px; display:flex; align-items:center; gap:16px;
+  }
+  .progress-track{
+    flex:1; height:10px; border-radius:999px; background:var(--surface-2);
+    overflow:hidden; border:1px solid var(--border-soft); position:relative;
+  }
+  .progress-fill{
+    height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg, var(--teal), var(--purple));
+    transition:width .6s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 12px rgba(20,184,166,.5);
+  }
+  .progress-label{ font-size:13px; color:var(--text-dim); white-space:nowrap; min-width:64px; text-align:right;}
+  .progress-label b{ color:var(--text); }
+
+  .reset-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-faint);
+    font-family:'DM Mono',monospace; font-size:11.5px; padding:5px 10px; border-radius:8px;
+    cursor:pointer; transition:.2s;
+  }
+  .reset-btn:hover{ color:var(--amber); border-color:rgba(245,158,11,.4); background:var(--amber-dim); }
+
+  .toolbar{ display:flex; justify-content:flex-end; margin-bottom:28px; }
+
+  /* ---------- Trail ---------- */
+  .trail{ position:relative; }
+
+  .phase-row{
+    display:grid; grid-template-columns:56px 1fr; gap:20px;
+    opacity:0; transform:translateY(24px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .phase-row.visible{ opacity:1; transform:translateY(0); }
+
+  .marker-col{ display:flex; flex-direction:column; align-items:center; }
+  .marker{
+    width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; flex-shrink:0; position:relative; z-index:2;
+    border:2px solid var(--border); background:var(--surface-2);
+    transition:.3s;
+  }
+  .connector{
+    width:2px; flex:1; margin-top:4px; margin-bottom:4px;
+    background:repeating-linear-gradient(var(--border), var(--border) 4px, transparent 4px, transparent 9px);
+    min-height:24px;
+  }
+  .connector.filled{ background:linear-gradient(var(--teal), var(--purple)); }
+  .phase-row:last-child .connector{ display:none; }
+
+  .phase-row.completed .marker{ background:var(--teal); border-color:var(--teal); box-shadow:0 0 16px rgba(20,184,166,.5); }
+  .phase-row.available .marker{ background:var(--surface-2); border-color:var(--purple); box-shadow:0 0 0 4px var(--purple-dim); animation:pulse 2.4s infinite; }
+  .phase-row.locked .marker{ filter:grayscale(1); opacity:.55; }
+
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 4px var(--purple-dim); }
+    50%{ box-shadow:0 0 0 8px transparent; }
+  }
+
+  /* ---------- Phase card ---------- */
+  .phase-card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); margin-bottom:28px; overflow:hidden;
+    transition:border-color .3s, opacity .3s;
+  }
+  .phase-row.locked .phase-card{ opacity:.5; }
+
+  .phase-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:20px 22px; cursor:pointer; user-select:none;
+  }
+  .phase-row.locked .phase-head{ cursor:not-allowed; }
+
+  .phase-head-left{ display:flex; flex-direction:column; gap:4px; }
+  .phase-tag{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); }
+  .phase-title{ font-size:19px; font-weight:700; margin:0; }
+  .phase-sub{ font-size:13px; color:var(--text-dim); margin:0; font-family:'DM Mono',monospace; line-height:1.5; }
+
+  .phase-status{
+    font-size:11px; padding:4px 10px; border-radius:999px; white-space:nowrap;
+    border:1px solid var(--border);
+  }
+  .phase-status.locked{ color:var(--text-faint); }
+  .phase-status.available{ color:var(--purple); border-color:rgba(139,92,246,.4); background:var(--purple-dim); }
+  .phase-status.completed{ color:var(--teal); border-color:rgba(20,184,166,.4); background:var(--teal-dim); }
+
+  .chev{ transition:transform .3s; color:var(--text-faint); font-size:14px; }
+  .phase-card.open .chev{ transform:rotate(180deg); }
+
+  .phase-body{
+    max-height:0; overflow:hidden; transition:max-height .4s ease;
+  }
+  .phase-body-inner{ padding:0 22px 22px; display:flex; flex-direction:column; gap:10px; }
+
+  .item{
+    display:flex; align-items:flex-start; gap:12px;
+    background:var(--surface-2); border:1px solid var(--border-soft);
+    border-radius:10px; padding:12px 14px; cursor:pointer;
+    border-left:3px solid var(--border);
+    transition:.2s;
+  }
+  .item:hover{ border-color:var(--border); background:#1f2226; }
+  .item.type-feature{ border-left-color:var(--teal); }
+  .item.type-concorrente{ border-left-color:var(--amber); }
+  .item.checked{ opacity:.6; }
+  .item.checked .item-text{ text-decoration:line-through; text-decoration-color:var(--text-faint); }
+
+  .checkbox{
+    width:18px; height:18px; border-radius:5px; border:1.5px solid var(--text-faint);
+    flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; transition:.2s;
+  }
+  .item.checked .checkbox{ background:var(--teal); border-color:var(--teal); color:#04211d; }
+
+  .item-text{ font-size:13.5px; line-height:1.5; color:var(--text); flex:1; }
+  .item-badge{
+    font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:2px 7px; border-radius:999px; flex-shrink:0; margin-top:1px;
+  }
+  .item.type-feature .item-badge{ color:var(--teal); background:var(--teal-dim); }
+  .item.type-concorrente .item-badge{ color:var(--amber); background:var(--amber-dim); }
+
+  .locked-note{
+    font-size:12px; color:var(--text-faint); padding:0 22px 20px; margin-top:-8px;
+  }
+
+  /* ---------- Badge ---------- */
+  .final-badge{
+    margin-top:16px; text-align:center; padding:40px 24px;
+    border-radius:20px; border:1px solid var(--border);
+    background:linear-gradient(160deg, rgba(139,92,246,.08), rgba(20,184,166,.08));
+    opacity:.4; transition:opacity .6s ease, transform .6s ease; transform:scale(.97);
+  }
+  .final-badge.unlocked{ opacity:1; transform:scale(1); border-color:rgba(20,184,166,.35); }
+  .badge-icon{ font-size:52px; margin-bottom:12px; display:block; filter:grayscale(1); transition:.6s; }
+  .final-badge.unlocked .badge-icon{ filter:grayscale(0); animation:pop .6s ease; }
+  @keyframes pop{ 0%{transform:scale(.5) rotate(-8deg);} 60%{transform:scale(1.12) rotate(4deg);} 100%{transform:scale(1) rotate(0);} }
+  .final-badge h3{ font-size:22px; margin:0 0 8px; }
+  .final-badge p{ color:var(--text-dim); font-size:13.5px; max-width:420px; margin:0 auto; line-height:1.6; }
+  .final-badge.unlocked p{ color:var(--text); }
+
+  footer{ text-align:center; margin-top:40px; color:var(--text-faint); font-size:11.5px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">🎸 Trilha de Vendas Giannini</span>
+    <h1>Paradigmas de Produtos</h1>
+    <p>Conheça os principais concorrentes de cada linha Giannini e domine os argumentos que fazem a diferença na hora da venda.</p>
+  </header>
+
+  <div class="progress-shell">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label"><b id="progressPct">0%</b> concluído</div>
+  </div>
+
+  <div class="toolbar">
+    <button class="reset-btn" id="resetBtn">↺ Reiniciar progresso</button>
+  </div>
+
+  <div class="trail" id="trail"></div>
+
+  <div class="final-badge" id="finalBadge">
+    <span class="badge-icon">🏆</span>
+    <h3>Trilha Concluída!</h3>
+    <p id="finalBadgeText">Complete todas as fases para desbloquear o badge de Especialista em Concorrência Giannini.</p>
+  </div>
+
+  <footer>Giannini · Paradigmas de Produtos · progresso salvo automaticamente neste navegador</footer>
+</div>
+
+<script>
+const PHASES = [
+  {
+    id:'p1', icon:'🎸', color:'teal',
+    title:'Linha Start',
+    subtitle:'Nossos produtos para iniciantes — Design avançado com preço acessível',
+    items:[
+      {id:'p1-1', type:'feature', text:'Largura de pestana amigável para iniciantes'},
+      {id:'p1-2', type:'feature', text:'Tocabilidade suave e macia'},
+      {id:'p1-3', type:'concorrente', text:'Concorre com a linha Memphis, da Tagima'},
+      {id:'p1-4', type:'concorrente', text:'Concorre com a linha Shelby, da Golden'},
+      {id:'p1-5', type:'concorrente', text:'Concorre com os violões Class, da Sonotec'},
+    ]
+  },
+  {
+    id:'p2', icon:'🎵', color:'purple',
+    title:'Linha Performance',
+    subtitle:'Preço acessível sem comprometer qualidade!',
+    items:[
+      {id:'p2-1', type:'feature', text:'Som acústico encorpado e marcante'},
+      {id:'p2-2', type:'feature', text:'Forte projeção e clareza entre as notas'},
+      {id:'p2-3', type:'concorrente', text:'Concorre com Hofma, ex.: HMF290'},
+      {id:'p2-4', type:'concorrente', text:'Concorre com Hofma, ex.: HMA295'},
+      {id:'p2-5', type:'concorrente', text:'Concorre com Strinberg, ex.: SD200C'},
+    ]
+  },
+  {
+    id:'p3', icon:'✨', color:'amber',
+    title:'Linha Performance Plus',
+    subtitle:'A Variedade encontra a Versatilidade',
+    items:[
+      {id:'p3-1', type:'feature', text:'Tampos selecionados em Spruce Sitka'},
+      {id:'p3-2', type:'feature', text:'Laterais e fundo em Sapele e Dao Wood, com acabamento brilhante'},
+      {id:'p3-3', type:'feature', text:'Centrados nos shapes mais vendidos do mercado: Dreadnought & Grand Auditorium'},
+      {id:'p3-4', type:'concorrente', text:'Concorre com a série Cromo, da Strinberg'},
+      {id:'p3-5', type:'concorrente', text:'Concorre com a série Gran Reserva, ex.: Tagima Dallas'},
+    ]
+  },
+  {
+    id:'p4', icon:'💎', color:'teal',
+    title:'Linha Performance Deluxe',
+    subtitle:'Tampos maciços produzem som marcante',
+    items:[
+      {id:'p4-1', type:'feature', text:'Tampos maciços em Sitka Spruce'},
+      {id:'p4-2', type:'feature', text:'Captação Fishman Presys II & Fishman Clásica II'},
+      {id:'p4-3', type:'feature', text:'Acompanha bag com 20mm de espuma protetiva'},
+      {id:'p4-4', type:'concorrente', text:'Concorre com Strinberg, linha Diamond de tampo maciço'},
+      {id:'p4-5', type:'concorrente', text:'Concorre com Crafter, ex.: DE-7/N'},
+      {id:'p4-6', type:'concorrente', text:'Concorre com Seizi Supreme'},
+    ]
+  },
+  {
+    id:'p5', icon:'🎛️', color:'purple',
+    title:'Linha Acoustik',
+    subtitle:'Instrumentos com Tecnologia embarcada',
+    items:[
+      {id:'p5-1', type:'feature', text:'Preamp de efeitos'},
+      {id:'p5-2', type:'feature', text:'Sistema Bluetooth'},
+      {id:'p5-3', type:'feature', text:'Acompanha bag com 20mm de espuma protetiva'},
+      {id:'p5-4', type:'concorrente', text:'Concorre com Strinberg Galaxy, com falso cutaway'},
+      {id:'p5-5', type:'concorrente', text:'Concorre com Yamaha Silent'},
+    ]
+  },
+];
+
+const STORAGE_KEY = 'giannini-competitor-trail-progress';
+let state = loadState();
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function phaseProgress(phase){
+  const total = phase.items.length;
+  const done = phase.items.filter(i => state[i.id]).length;
+  return { total, done, complete: done === total };
+}
+
+function isPhaseUnlocked(index){
+  if(index === 0) return true;
+  return phaseProgress(PHASES[index-1]).complete;
+}
+
+function totalProgress(){
+  const totalItems = PHASES.reduce((a,p)=>a+p.items.length,0);
+  const doneItems = PHASES.reduce((a,p)=>a+p.items.filter(i=>state[i.id]).length,0);
+  return { totalItems, doneItems, pct: Math.round((doneItems/totalItems)*100) };
+}
+
+const trailEl = document.getElementById('trail');
+
+function render(){
+  trailEl.innerHTML = '';
+
+  PHASES.forEach((phase, index) => {
+    const unlocked = isPhaseUnlocked(index);
+    const prog = phaseProgress(phase);
+    const status = prog.complete ? 'completed' : (unlocked ? 'available' : 'locked');
+
+    const row = document.createElement('div');
+    row.className = `phase-row ${status}`;
+
+    const nextUnlocked = index < PHASES.length - 1 ? isPhaseUnlocked(index+1) : false;
+
+    row.innerHTML = `
+      <div class="marker-col">
+        <div class="marker">${status === 'completed' ? '✓' : phase.icon}</div>
+        <div class="connector ${prog.complete ? 'filled' : ''}"></div>
+      </div>
+      <div>
+        <div class="phase-card" data-phase="${phase.id}">
+          <div class="phase-head" data-toggle="${phase.id}">
+            <div class="phase-head-left">
+              <span class="phase-tag">Fase ${index+1} de ${PHASES.length}</span>
+              <h3 class="phase-title">${phase.icon} ${phase.title}</h3>
+              <p class="phase-sub">${phase.subtitle}</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="phase-status ${status}">${
+                status==='completed' ? `concluída` : status==='available' ? `${prog.done}/${prog.total}` : '🔒 bloqueada'
+              }</span>
+              <span class="chev">▾</span>
+            </div>
+          </div>
+          <div class="phase-body" data-body="${phase.id}">
+            <div class="phase-body-inner">
+              ${phase.items.map(item => `
+                <div class="item type-${item.type} ${state[item.id] ? 'checked' : ''}" data-item="${item.id}">
+                  <div class="checkbox">${state[item.id] ? '✓' : ''}</div>
+                  <div class="item-text">${item.text}</div>
+                  <div class="item-badge">${item.type === 'concorrente' ? '🎯 concorrente' : '✓ diferencial'}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          ${!unlocked ? `<div class="locked-note">Conclua a fase anterior para desbloquear.</div>` : ''}
+        </div>
+      </div>
+    `;
+
+    trailEl.appendChild(row);
+
+    // wire item checkboxes
+    if(unlocked){
+      row.querySelectorAll('.item').forEach(itemEl => {
+        itemEl.addEventListener('click', () => {
+          const id = itemEl.getAttribute('data-item');
+          state[id] = !state[id];
+          saveState();
+          render();
+          observeRows();
+        });
+      });
+    }
+
+    // wire accordion toggle
+    const head = row.querySelector(`[data-toggle="${phase.id}"]`);
+    const body = row.querySelector(`[data-body="${phase.id}"]`);
+    const card = row.querySelector('.phase-card');
+    head.addEventListener('click', () => {
+      if(!unlocked) return;
+      const isOpen = card.classList.contains('open');
+      if(isOpen){
+        body.style.maxHeight = null;
+        card.classList.remove('open');
+      } else {
+        card.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+      }
+    });
+
+    // auto-open the first available (in-progress) phase by default
+    if(status === 'available' && prog.done > 0 && prog.done < prog.total){
+      card.classList.add('open');
+      requestAnimationFrame(()=>{ body.style.maxHeight = body.scrollHeight + 'px'; });
+    }
+    if(status === 'available' && prog.done === 0 && index === PHASES.findIndex((_,i)=>isPhaseUnlocked(i) && !phaseProgress(PHASES[i]).complete)){
+      card.classList.add('open');
+      requestAnimationFrame(()=>{ body.style.maxHeight = body.scrollHeight + 'px'; });
+    }
+  });
+
+  updateProgressBar();
+  updateFinalBadge();
+}
+
+function updateProgressBar(){
+  const { pct } = totalProgress();
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+function updateFinalBadge(){
+  const allComplete = PHASES.every(p => phaseProgress(p).complete);
+  const badge = document.getElementById('finalBadge');
+  const text = document.getElementById('finalBadgeText');
+  if(allComplete){
+    badge.classList.add('unlocked');
+    text.textContent = 'Parabéns! Você concluiu a trilha e agora domina os argumentos de concorrência de todas as linhas Giannini.';
+  } else {
+    badge.classList.remove('unlocked');
+    text.textContent = 'Complete todas as fases para desbloquear o badge de Especialista em Concorrência Giannini.';
+  }
+}
+
+function observeRows(){
+  const rows = document.querySelectorAll('.phase-row:not(.visible)');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  rows.forEach(r => io.observe(r));
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(confirm('Isso vai apagar todo o progresso salvo. Continuar?')){
+    state = {};
+    saveState();
+    render();
+    observeRows();
+  }
+});
+
+render();
+observeRows();
+</script>
+
+</body>
+</html>
