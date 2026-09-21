@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comex Stat — Instrumentos Musicais</title>
+<style>
+:root{
+  --bg:#f5f4f1; --surface:#ffffff; --surface-2:#faf9f6;
+  --text:#1c1b19; --text-2:#5c5a54; --text-muted:#8a8880;
+  --border:#e2e0d8; --accent:#d95926; --accent-ink:#8f3a13; --accent-bg:#fbe7dc;
+  --good:#1d9e75; --good-bg:#e1f5ee; --good-ink:#0f6e56;
+  --bad:#c94040; --bad-bg:#fbe7e7; --bad-ink:#8f2323;
+  --navy:#1c2733;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#15140f; --surface:#201f1a; --surface-2:#262520;
+    --text:#f0efe9; --text-2:#c3c1b7; --text-muted:#89877e;
+    --border:#39372f; --accent:#e97a4a; --accent-ink:#ffd9c4; --accent-bg:#3a2418;
+    --good:#5dcaa5; --good-bg:#0f3a2f; --good-ink:#9fe1cb;
+    --bad:#e88a8a; --bad-bg:#3a1d1d; --bad-ink:#f7c1c1;
+    --navy:#0e161f;
+  }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.55;}
+a{color:var(--accent);}
+.layout{display:flex;min-height:100vh;}
+nav.side{width:220px;flex:none;background:var(--navy);color:#e8e6df;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+nav.side .brand{padding:0 20px 16px;font-weight:700;font-size:15px;letter-spacing:.02em;color:#fff;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:8px;}
+nav.side .brand small{display:block;font-weight:400;color:#b7b3a6;font-size:11px;margin-top:4px;}
+nav.side a{display:block;padding:9px 20px;color:#cfccc0;text-decoration:none;font-size:13.5px;border-left:3px solid transparent;}
+nav.side a:hover{background:rgba(255,255,255,.06);color:#fff;}
+nav.side a.active{color:#fff;border-left-color:var(--accent);background:rgba(255,255,255,.08);}
+nav.side .grp{padding:14px 20px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8b8878;}
+main{flex:1;min-width:0;padding:28px 32px 80px;max-width:1180px;}
+section{margin-bottom:52px;scroll-margin-top:20px;}
+h1{font-size:24px;font-weight:700;margin:0 0 4px;}
+h2{font-size:19px;font-weight:700;margin:0 0 4px;}
+h3{font-size:15.5px;font-weight:700;margin:0 0 10px;}
+.sub{color:var(--text-2);font-size:13.5px;margin:0 0 20px;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+.kpi .lbl{font-size:12px;color:var(--text-muted);margin-bottom:6px;}
+.kpi .val{font-size:23px;font-weight:700;}
+.kpi .delta{font-size:12.5px;margin-top:4px;font-weight:600;}
+.up{color:var(--good-ink);} .down{color:var(--bad-ink);}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;}
+.pill.up{background:var(--good-bg);color:var(--good-ink);}
+.pill.down{background:var(--bad-bg);color:var(--bad-ink);}
+.pill.zero{background:var(--accent-bg);color:var(--accent-ink);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr;} nav.side{position:fixed;transform:translateX(-100%);transition:.2s;z-index:50;} nav.side.open{transform:translateX(0);} main{padding:64px 16px 80px;} .menubtn{display:inline-flex!important;}}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);padding:8px 10px;border-bottom:1px solid var(--border);}
+td{padding:9px 10px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+.banner{background:var(--accent-bg);border:1px solid var(--accent);color:var(--accent-ink);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;}
+.banner .ic{font-size:20px;}
+.banner b{color:var(--accent-ink);}
+.chart-wrap{position:relative;height:220px;margin-top:10px;}
+.chart-wrap.tall{height:280px;}
+.note{font-size:12.5px;color:var(--text-muted);margin-top:8px;}
+.tag{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:1px 7px;font-size:11.5px;color:var(--text-2);margin-left:6px;}
+.menubtn{display:none;position:fixed;top:14px;left:14px;z-index:60;background:var(--navy);color:#fff;border:none;border-radius:8px;width:38px;height:38px;font-size:18px;align-items:center;justify-content:center;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-2);margin-bottom:6px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.sw{width:9px;height:9px;border-radius:2px;display:inline-block;}
+footer{color:var(--text-muted);font-size:12px;padding:20px 0;border-top:1px solid var(--border);margin-top:20px;}
+</style>
+</head>
+<body>
+<button class="menubtn" id="menubtn" aria-label="Abrir menu">&#9776;</button>
+<div class="layout">
+<nav class="side" id="sidenav">
+  <div class="brand">COMEX STAT<small>Instrumentos musicais</small></div>
+  <a href="#visao-geral" class="navlink">Visão geral</a>
+  <div class="grp">NCM</div>
+  <a href="#ncm-tabela" class="navlink">Todas as NCMs (cap. 92)</a>
+  <a href="#ncm-detalhe" class="navlink">NCMs monitoradas</a>
+  <div class="grp">Geografia</div>
+  <a href="#pais" class="navlink">País de origem</a>
+  <a href="#urf" class="navlink">URF (porto/entrada)</a>
+  <a href="#municipio" class="navlink">Município importador</a>
+  <div class="grp">Concorrência</div>
+  <a href="#concorrentes" class="navlink">Sonotec · Tagima · Grupo Classic</a>
+  <a href="#instagram" class="navlink">Monitoramento social</a>
+  <div class="grp">Contexto</div>
+  <a href="#cambio-tarifas" class="navlink">Câmbio &amp; tarifas</a>
+  <a href="#metodologia" class="navlink">Fontes &amp; metodologia</a>
+</nav>
+<main>
+
+<section id="visao-geral">
+  <h1>Importações brasileiras de instrumentos musicais</h1>
+  <p class="sub">Capítulo 92 da NCM · Acumulado do ano (YTD) comparando o mesmo período em 2025 e 2026 · Fonte: Comex Stat (MDIC)</p>
+
+  <div class="banner">
+    <div class="ic">&#9888;</div>
+    <div>
+      <b id="tariff-countdown">—</b><br>
+      A Resolução GECEX nº 926 zera o Imposto de Importação (de 16,2% para 0%) de violões, guitarras acústicas e outros instrumentos de corda/sopro acústicos (NCM 9202.10.00, 9202.90.00, 9205.10.00, 9205.90.00) a partir de <b>01/10/2026</b>. Guitarras/contrabaixos elétricos (9207.90.10) e percussão (9206.00.00) ficaram de fora. Veja detalhes em <a href="#cambio-tarifas">Câmbio &amp; tarifas</a>.
+    </div>
+  </div>
+
+  <div class="kpi-row" id="kpi-overview"></div>
+
+  <div class="card">
+    <h3>Total capítulo 92 — evolução mensal (US$ FOB)</h3>
+    <div class="chart-wrap tall"><canvas id="chartOverall" role="img" aria-label="Gráfico de linha do valor FOB mensal importado do capítulo 92 entre 2024 e 2026"></canvas></div>
+  </div>
+</section>
+
+<section id="ncm-tabela">
+  <h2>Todas as NCMs do capítulo 92</h2>
+  <p class="sub">Acumulado no ano (Jan–Ago) 2025 vs 2026, ordenado por valor FOB 2026</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>NCM</th><th>Descrição</th><th class="num">FOB YTD 2025</th><th class="num">FOB YTD 2026</th><th class="num">Var.</th></tr></thead>
+      <tbody id="tbl-ncm"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="ncm-detalhe">
+  <h2>NCMs monitoradas de perto</h2>
+  <p class="sub">As 5 posições acompanhadas com detalhe: tendência mensal e principais países de origem</p>
+  <div id="ncm-cards"></div>
+</section>
+
+<section id="pais">
+  <h2>Importações por país de origem</h2>
+  <p class="sub">Capítulo 92 completo · Acumulado Jan–Ago 2025 vs 2026</p>
+  <div class="card">
+    <div class="chart-wrap tall"><canvas id="chartPais" role="img" aria-label="Gráfico de barras dos 10 principais países de origem por valor FOB"></canvas></div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>País</th><th class="num">FOB YTD 2025</th><th class="num">FOB YTD 2026</th><th class="num">Var.</th></tr></thead>
+      <tbody id="tbl-pais"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="urf">
+  <h2>Importações por URF (porto/aeroporto de entrada)</h2>
+  <p class="sub">Capítulo 92 completo · Acumulado Jan–Ago 2025 vs 2026</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>URF</th><th class="num">FOB YTD 2025</th><th class="num">FOB YTD 2026</th><th class="num">Var.</th></tr></thead>
+      <tbody id="tbl-urf"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="municipio">
+  <h2>Importações por município</h2>
+  <p class="sub">Restrito às posições SH4 9202/9203/9204/9207 (cordas e elétricos) · mesma base usada nas páginas de concorrentes abaixo</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Município</th><th class="num">FOB YTD 2025</th><th class="num">FOB YTD 2026</th><th class="num">Var.</th></tr></thead>
+      <tbody id="tbl-municipio"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="concorrentes">
+  <h2>Sonotec · Tagima · Grupo Classic</h2>
+  <p class="sub">Estimativa por proxy geográfico — não é dado de empresa, é o valor importado pelo município-sede de cada fabricante</p>
+  <div class="card" style="background:var(--surface-2);">
+    <b>Importante sobre esta metodologia:</b> a Receita Federal protege por sigilo fiscal (Portaria RFB 2.344/2011) o vínculo entre CNPJ e valor de importação — o Comex Stat nunca identifica a empresa importadora. O que esta seção mostra é o total importado (SH4 9202/9203/9204/9207) pelo <i>município</i> onde cada fabricante tem sede: Regente Feijó/SP (Sonotec), São Bernardo do Campo/SP (Tagima) e Contagem/MG (Grupo Classic). É uma aproximação razoável quando a empresa é a importadora dominante daquele município naquele segmento, mas pode incluir outros importadores da mesma cidade.
+  </div>
+  <div class="grid2" id="competitor-cards"></div>
+</section>
+
+<section id="instagram">
+  <h2>Monitoramento social dos concorrentes</h2>
+  <p class="sub">Complementar aos dados de importação</p>
+  <div class="card">
+    Esta página, no relatório original em Power BI, cruzava a movimentação de importação com posts recentes dos concorrentes no Instagram. Esse monitoramento contínuo já existe como rotina separada (skill <code>novidades-matinal-concorrentes</code>) e não foi migrado para este snapshot estático — peça a atualização das novidades separadamente quando quiser cruzar com os números acima.
+  </div>
+</section>
+
+<section id="cambio-tarifas">
+  <h2>Câmbio (USD/BRL) &amp; mudança tarifária</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Dólar PTAX — média mensal de venda</h3>
+      <div class="chart-wrap"><canvas id="chartPtax" role="img" aria-label="Gráfico de linha da cotação média mensal do dólar PTAX de venda"></canvas></div>
+      <p class="note">Fonte: Banco Central do Brasil (PTAX). Use para converter FOB US$ em custo real em reais.</p>
+    </div>
+    <div class="card">
+      <h3>Resolução GECEX nº 926/2026</h3>
+      <p class="note" style="margin-top:0;">Publicada 25/06/2026 · vigência 01/10/2026 · zera o Imposto de Importação de instrumentos acústicos de corda e sopro (mantém elétricos e percussão tributados)</p>
+      <table>
+        <thead><tr><th>NCM</th><th>Descrição</th><th class="num">Alíquota atual</th><th class="num">A partir de 01/10</th></tr></thead>
+        <tbody id="tbl-tarifas"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="metodologia">
+  <h2>Fontes &amp; metodologia</h2>
+  <div class="card">
+    <ul style="margin:0;padding-left:20px;">
+      <li><b>Comex Stat (MDIC)</b> — API oficial <code>api-comexstat.mdic.gov.br</code>, dados gerais e por município, capítulo 92 da NCM.</li>
+      <li><b>BACEN PTAX</b> — cotação diária de venda do dólar, agregada em média mensal.</li>
+      <li><b>Resolução GECEX nº 926/2026</b> — tarifas de importação (fonte: Diário Oficial da União / imprensa especializada).</li>
+      <li>Comparação YTD sempre no mesmo intervalo de meses (<span id="ytd-note"></span>) para os dois anos, já que 2026 ainda não fechou.</li>
+      <li>Este é um snapshot estático — os dados não se atualizam sozinhos. Peça uma nova geração quando quiser dados mais recentes.</li>
+    </ul>
+    <p class="note" id="meta-note" style="margin-top:12px;"></p>
+  </div>
+  <footer>Substituiu o relatório Power BI (COMEX_STAT_IMP.pbix). Gerado com apoio de Claude.</footer>
+</section>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const DATA = {"meta":{"geradoEm":"2026-09-21T19:47:57.920Z","ultimaAtualizacaoComexStat":"2026-08 (dados publicados em 04/09/2026)","ytdCorte":"Jan-Ago (mes 8)","fonte":"API oficial Comex Stat (MDIC) - https://api-comexstat.mdic.gov.br + BACEN PTAX"},"ncmTable":[{"ncm":"92029000","descricao":"Outros instrumentos musicais de cordas","fobYtd2025":11959845,"fobYtd2026":14731572,"pctVar":23.17527526485502,"kgYtd2025":689910,"kgYtd2026":931119},{"ncm":"92071090","descricao":"Outros instrumentos musicais de teclado","fobYtd2025":11825910,"fobYtd2026":14496053,"pctVar":22.578752924722075,"kgYtd2025":930573,"kgYtd2026":1298763},{"ncm":"92079010","descricao":"Guitarras e contrabaixos","fobYtd2025":9002987,"fobYtd2026":10872547,"pctVar":20.765996885255973,"kgYtd2025":460806,"kgYtd2026":554393},{"ncm":"92060000","descricao":"Instrumentos musicais de percussão (por exemplo, tambores, caixas, xilofones, pratos, castanholas, maracás)","fobYtd2025":5990886,"fobYtd2026":5279189,"pctVar":-11.879661873051832,"kgYtd2025":763161,"kgYtd2026":774611},{"ncm":"92079090","descricao":"Outros instrumentos musicais com som amplificado por meio elétrico","fobYtd2025":3010481,"fobYtd2026":5038825,"pctVar":67.37607711192996,"kgYtd2025":244358,"kgYtd2026":464690},{"ncm":"92099900","descricao":"Partes e acessórios para outros instrumentos musicais","fobYtd2025":3926041,"fobYtd2026":4688361,"pctVar":19.417015767283125,"kgYtd2025":521157,"kgYtd2026":692502},{"ncm":"92099400","descricao":"Partes e acessórios de instrumentos musicais da posição 92.07 (instrumentos musicais com som amplificado por meio elétrico)","fobYtd2025":4123730,"fobYtd2026":4415142,"pctVar":7.066709023141671,"kgYtd2025":328752,"kgYtd2026":391011},{"ncm":"92059000","descricao":"Outros instrumentos musicais de sopro","fobYtd2025":3214471,"fobYtd2026":3820921,"pctVar":18.866245799075493,"kgYtd2025":134600,"kgYtd2026":200941},{"ncm":"92071010","descricao":"Sintetizadores (instrumentos musicais de teclado)","fobYtd2025":3221152,"fobYtd2026":3167626,"pctVar":-1.6617036389465631,"kgYtd2025":86058,"kgYtd2026":116706},{"ncm":"92051000","descricao":"Instrumentos musicais de sopro denominados \"metais\"","fobYtd2025":1947440,"fobYtd2026":3155687,"pctVar":62.042835722795054,"kgYtd2025":63766,"kgYtd2026":113999},{"ncm":"92093000","descricao":"Cordas para instrumentos musicais","fobYtd2025":1949924,"fobYtd2026":2666610,"pctVar":36.7545606905705,"kgYtd2025":19801,"kgYtd2026":28485},{"ncm":"92012000","descricao":"Pianos de cauda","fobYtd2025":963926,"fobYtd2026":1857992,"pctVar":92.75255569410929,"kgYtd2025":56224,"kgYtd2026":70848},{"ncm":"92099200","descricao":"Partes e acessórios de instrumentos musicais da posição 92.02 (instrumentos musicais de cordas)","fobYtd2025":1102859,"fobYtd2026":1733319,"pctVar":57.16596591223356,"kgYtd2025":120113,"kgYtd2026":210206},{"ncm":"92021000","descricao":"Instrumentos musicais de cordas, tocados com o auxílio de um arco","fobYtd2025":1249356,"fobYtd2026":1252688,"pctVar":0.26669740250176893,"kgYtd2025":95128,"kgYtd2026":100679},{"ncm":"92011000","descricao":"Pianos verticais","fobYtd2025":329499,"fobYtd2026":489034,"pctVar":48.41744587995715,"kgYtd2025":35350,"kgYtd2026":51081},{"ncm":"92089000","descricao":"Órgãos mecânicos de feira e outros instrumentos musicais","fobYtd2025":143352,"fobYtd2026":367394,"pctVar":156.2880183045929,"kgYtd2025":23501,"kgYtd2026":120023},{"ncm":"92099100","descricao":"Partes e acessórios de pianos","fobYtd2025":402265,"fobYtd2026":255925,"pctVar":-36.379003890470216,"kgYtd2025":47857,"kgYtd2026":27752},{"ncm":"92081000","descricao":"Caixas de música","fobYtd2025":339007,"fobYtd2026":141849,"pctVar":-58.15750117254216,"kgYtd2025":81318,"kgYtd2026":31562},{"ncm":"92019000","descricao":"Outros pianos, cravos e outros instrumentos de cordas, com teclado","fobYtd2025":7400,"fobYtd2026":21459,"pctVar":189.98648648648648,"kgYtd2025":2302,"kgYtd2026":12168}],"ncmMonthly":{"92021000":[{"ym":"2024-01","fob":260303},{"ym":"2024-02","fob":28828},{"ym":"2024-03","fob":156568},{"ym":"2024-04","fob":102274},{"ym":"2024-05","fob":69847},{"ym":"2024-06","fob":128560},{"ym":"2024-07","fob":61687},{"ym":"2024-08","fob":110046},{"ym":"2024-09","fob":246084},{"ym":"2024-10","fob":108351},{"ym":"2024-11","fob":148512},{"ym":"2024-12","fob":113860},{"ym":"2025-01","fob":314074},{"ym":"2025-02","fob":157789},{"ym":"2025-03","fob":115140},{"ym":"2025-04","fob":127812},{"ym":"2025-05","fob":131996},{"ym":"2025-06","fob":292881},{"ym":"2025-07","fob":24925},{"ym":"2025-08","fob":84739},{"ym":"2025-09","fob":222517},{"ym":"2025-10","fob":205248},{"ym":"2025-11","fob":261988},{"ym":"2025-12","fob":72203},{"ym":"2026-01","fob":212933},{"ym":"2026-02","fob":216658},{"ym":"2026-03","fob":164691},{"ym":"2026-04","fob":257128},{"ym":"2026-05","fob":96184},{"ym":"2026-06","fob":20979},{"ym":"2026-07","fob":180993},{"ym":"2026-08","fob":103122}],"92029000":[{"ym":"2024-01","fob":1432566},{"ym":"2024-02","fob":1070610},{"ym":"2024-03","fob":1649227},{"ym":"2024-04","fob":1544459},{"ym":"2024-05","fob":664654},{"ym":"2024-06","fob":1577176},{"ym":"2024-07","fob":1167698},{"ym":"2024-08","fob":1348838},{"ym":"2024-09","fob":1667454},{"ym":"2024-10","fob":2049989},{"ym":"2024-11","fob":1214461},{"ym":"2024-12","fob":1616018},{"ym":"2025-01","fob":1679112},{"ym":"2025-02","fob":1998258},{"ym":"2025-03","fob":1209665},{"ym":"2025-04","fob":1211939},{"ym":"2025-05","fob":890565},{"ym":"2025-06","fob":2070942},{"ym":"2025-07","fob":1387205},{"ym":"2025-08","fob":1512159},{"ym":"2025-09","fob":1990636},{"ym":"2025-10","fob":1902382},{"ym":"2025-11","fob":1966166},{"ym":"2025-12","fob":2106430},{"ym":"2026-01","fob":1799201},{"ym":"2026-02","fob":1887855},{"ym":"2026-03","fob":2004214},{"ym":"2026-04","fob":2776100},{"ym":"2026-05","fob":777059},{"ym":"2026-06","fob":1744883},{"ym":"2026-07","fob":1993231},{"ym":"2026-08","fob":1749029}],"92060000":[{"ym":"2024-01","fob":703335},{"ym":"2024-02","fob":783485},{"ym":"2024-03","fob":513213},{"ym":"2024-04","fob":651803},{"ym":"2024-05","fob":511109},{"ym":"2024-06","fob":304841},{"ym":"2024-07","fob":867933},{"ym":"2024-08","fob":856863},{"ym":"2024-09","fob":575911},{"ym":"2024-10","fob":1365458},{"ym":"2024-11","fob":828325},{"ym":"2024-12","fob":553225},{"ym":"2025-01","fob":840105},{"ym":"2025-02","fob":608019},{"ym":"2025-03","fob":1031909},{"ym":"2025-04","fob":525269},{"ym":"2025-05","fob":868818},{"ym":"2025-06","fob":636379},{"ym":"2025-07","fob":998711},{"ym":"2025-08","fob":481676},{"ym":"2025-09","fob":507008},{"ym":"2025-10","fob":885009},{"ym":"2025-11","fob":1204629},{"ym":"2025-12","fob":575670},{"ym":"2026-01","fob":463197},{"ym":"2026-02","fob":901418},{"ym":"2026-03","fob":749963},{"ym":"2026-04","fob":805818},{"ym":"2026-05","fob":606100},{"ym":"2026-06","fob":420502},{"ym":"2026-07","fob":685160},{"ym":"2026-08","fob":647031}],"92079010":[{"ym":"2024-01","fob":697852},{"ym":"2024-02","fob":968239},{"ym":"2024-03","fob":756248},{"ym":"2024-04","fob":860014},{"ym":"2024-05","fob":860129},{"ym":"2024-06","fob":637214},{"ym":"2024-07","fob":1043888},{"ym":"2024-08","fob":1348904},{"ym":"2024-09","fob":698822},{"ym":"2024-10","fob":1169560},{"ym":"2024-11","fob":1224613},{"ym":"2024-12","fob":1542184},{"ym":"2025-01","fob":1285664},{"ym":"2025-02","fob":1009023},{"ym":"2025-03","fob":1302525},{"ym":"2025-04","fob":1145317},{"ym":"2025-05","fob":807400},{"ym":"2025-06","fob":1208821},{"ym":"2025-07","fob":1164469},{"ym":"2025-08","fob":1079768},{"ym":"2025-09","fob":1467978},{"ym":"2025-10","fob":1147629},{"ym":"2025-11","fob":1403934},{"ym":"2025-12","fob":1427929},{"ym":"2026-01","fob":1522444},{"ym":"2026-02","fob":910730},{"ym":"2026-03","fob":1620326},{"ym":"2026-04","fob":1356163},{"ym":"2026-05","fob":1150205},{"ym":"2026-06","fob":1285016},{"ym":"2026-07","fob":1470094},{"ym":"2026-08","fob":1557569}],"92093000":[{"ym":"2024-01","fob":235589},{"ym":"2024-02","fob":187897},{"ym":"2024-03","fob":53959},{"ym":"2024-04","fob":338487},{"ym":"2024-05","fob":224201},{"ym":"2024-06","fob":314395},{"ym":"2024-07","fob":244795},{"ym":"2024-08","fob":343327},{"ym":"2024-09","fob":519297},{"ym":"2024-10","fob":273578},{"ym":"2024-11","fob":173290},{"ym":"2024-12","fob":383829},{"ym":"2025-01","fob":191702},{"ym":"2025-02","fob":292439},{"ym":"2025-03","fob":125748},{"ym":"2025-04","fob":269017},{"ym":"2025-05","fob":217044},{"ym":"2025-06","fob":387974},{"ym":"2025-07","fob":214183},{"ym":"2025-08","fob":251817},{"ym":"2025-09","fob":284546},{"ym":"2025-10","fob":257898},{"ym":"2025-11","fob":444835},{"ym":"2025-12","fob":274490},{"ym":"2026-01","fob":336749},{"ym":"2026-02","fob":285304},{"ym":"2026-03","fob":275132},{"ym":"2026-04","fob":339338},{"ym":"2026-05","fob":273620},{"ym":"2026-06","fob":270364},{"ym":"2026-07","fob":430211},{"ym":"2026-08","fob":455892}]},"overallMonthly":[{"ym":"2024-01","fob":8681605},{"ym":"2024-02","fob":6617772},{"ym":"2024-03","fob":8559871},{"ym":"2024-04","fob":8505996},{"ym":"2024-05","fob":5676335},{"ym":"2024-06","fob":7739595},{"ym":"2024-07","fob":7547706},{"ym":"2024-08","fob":8268363},{"ym":"2024-09","fob":9599136},{"ym":"2024-10","fob":11016854},{"ym":"2024-11","fob":8247448},{"ym":"2024-12","fob":10182163},{"ym":"2025-01","fob":8682514},{"ym":"2025-02","fob":8328114},{"ym":"2025-03","fob":9055150},{"ym":"2025-04","fob":6517316},{"ym":"2025-05","fob":7789357},{"ym":"2025-06","fob":8569255},{"ym":"2025-07","fob":7646127},{"ym":"2025-08","fob":8122698},{"ym":"2025-09","fob":9100255},{"ym":"2025-10","fob":9011287},{"ym":"2025-11","fob":10665631},{"ym":"2025-12","fob":9917013},{"ym":"2026-01","fob":11501200},{"ym":"2026-02","fob":9181335},{"ym":"2026-03","fob":9005119},{"ym":"2026-04","fob":10848819},{"ym":"2026-05","fob":7424265},{"ym":"2026-06","fob":7989378},{"ym":"2026-07","fob":12614291},{"ym":"2026-08","fob":9887786}],"ncmTopCountries":{"92021000":[{"country":"China","fob":2482531},{"country":"Romênia","fob":17314},{"country":"Índia","fob":2199}],"92029000":[{"country":"China","fob":24427824},{"country":"Indonésia","fob":1213779},{"country":"México","fob":382001},{"country":"Estados Unidos","fob":306307},{"country":"Japão","fob":149658},{"country":"Hong Kong","fob":120528}],"92060000":[{"country":"China","fob":9416132},{"country":"Estados Unidos","fob":670104},{"country":"Taiwan (Formosa)","fob":374775},{"country":"Canadá","fob":220503},{"country":"Tailândia","fob":135704},{"country":"Turquia","fob":90104}],"92079010":[{"country":"China","fob":13115375},{"country":"Indonésia","fob":3519554},{"country":"Estados Unidos","fob":1814547},{"country":"México","fob":512540},{"country":"Japão","fob":305640},{"country":"Coreia do Sul","fob":287052}],"92093000":[{"country":"Estados Unidos","fob":3499580},{"country":"Áustria","fob":273966},{"country":"China","fob":262691},{"country":"Argentina","fob":190362},{"country":"Dinamarca","fob":116012},{"country":"França","fob":60862}]},"countryYtd":[{"pais":"China","fobYtd2025":46876343,"fobYtd2026":56024918,"pctVar":19.51640084210494},{"pais":"Indonésia","fobYtd2025":5687687,"fobYtd2026":5848353,"pctVar":2.824803826230241},{"pais":"Estados Unidos","fobYtd2025":3991676,"fobYtd2026":5424847,"pctVar":35.90399120569906},{"pais":"Malásia","fobYtd2025":1254103,"fobYtd2026":2322793,"pctVar":85.2154886799569},{"pais":"Japão","fobYtd2025":1382032,"fobYtd2026":2110846,"pctVar":52.73495838012434},{"pais":"Índia","fobYtd2025":689770,"fobYtd2026":1006951,"pctVar":45.98358873247604},{"pais":"Taiwan (Formosa)","fobYtd2025":599862,"fobYtd2026":892246,"pctVar":48.74187729844531},{"pais":"Vietnã","fobYtd2025":608095,"fobYtd2026":867228,"pctVar":42.613900788528106},{"pais":"Hong Kong","fobYtd2025":491985,"fobYtd2026":743871,"pctVar":51.19790237507241},{"pais":"França","fobYtd2025":380565,"fobYtd2026":535453,"pctVar":40.699486290121264},{"pais":"México","fobYtd2025":490231,"fobYtd2026":480856,"pctVar":-1.912363763205509},{"pais":"Itália","fobYtd2025":411483,"fobYtd2026":361230,"pctVar":-12.212655200822391},{"pais":"Coreia do Sul","fobYtd2025":255924,"fobYtd2026":320123,"pctVar":25.085181538269175},{"pais":"Áustria","fobYtd2025":128467,"fobYtd2026":303303,"pctVar":136.0940942031806},{"pais":"Alemanha","fobYtd2025":243747,"fobYtd2026":294979,"pctVar":21.01851509967302},{"pais":"Canadá","fobYtd2025":250727,"fobYtd2026":127398,"pctVar":-49.18855966848405},{"pais":"Argentina","fobYtd2025":123537,"fobYtd2026":125744,"pctVar":1.7865093049046032},{"pais":"Dinamarca","fobYtd2025":37293,"fobYtd2026":81502,"pctVar":118.54503526130908},{"pais":"Paraguai","fobYtd2025":85882,"fobYtd2026":75395,"pctVar":-12.210940592906546},{"pais":"Tailândia","fobYtd2025":93606,"fobYtd2026":70555,"pctVar":-24.62555819071427},{"pais":"Filipinas","fobYtd2025":235868,"fobYtd2026":59741,"pctVar":-74.67185035697933},{"pais":"Suíça","fobYtd2025":28354,"fobYtd2026":58823,"pctVar":107.459265006701},{"pais":"Reino Unido","fobYtd2025":51487,"fobYtd2026":58550,"pctVar":13.718025909452871},{"pais":"Turquia","fobYtd2025":39411,"fobYtd2026":50693,"pctVar":28.62652558930248},{"pais":"Brasil","fobYtd2025":41924,"fobYtd2026":30975,"pctVar":-26.116305696021374},{"pais":"Polônia","fobYtd2025":33424,"fobYtd2026":30388,"pctVar":-9.0832934418382},{"pais":"Países Baixos (Holanda)","fobYtd2025":52892,"fobYtd2026":26122,"pctVar":-50.61256900854572},{"pais":"Tcheca, República","fobYtd2025":4983,"fobYtd2026":24104,"pctVar":383.7246638571142},{"pais":"Suécia","fobYtd2025":23178,"fobYtd2026":19058,"pctVar":-17.775476745189405},{"pais":"Romênia","fobYtd2025":0,"fobYtd2026":17314,"pctVar":null},{"pais":"Croácia","fobYtd2025":0,"fobYtd2026":12790,"pctVar":null},{"pais":"Israel","fobYtd2025":8445,"fobYtd2026":9378,"pctVar":11.047957371225577},{"pais":"Eslováquia","fobYtd2025":7993,"fobYtd2026":7851,"pctVar":-1.7765544851745276},{"pais":"Espanha","fobYtd2025":27532,"fobYtd2026":6841,"pctVar":-75.15254976027896},{"pais":"Senegal","fobYtd2025":1600,"fobYtd2026":4907,"pctVar":206.6875},{"pais":"Peru","fobYtd2025":4947,"fobYtd2026":4412,"pctVar":-10.814635132403478},{"pais":"Finlândia","fobYtd2025":16643,"fobYtd2026":4190,"pctVar":-74.82425043561858},{"pais":"Irlanda","fobYtd2025":4075,"fobYtd2026":2729,"pctVar":-33.03067484662577},{"pais":"Egito","fobYtd2025":1044,"fobYtd2026":1878,"pctVar":79.88505747126436},{"pais":"Portugal","fobYtd2025":12022,"fobYtd2026":1164,"pctVar":-90.31775079021793},{"pais":"Paquistão","fobYtd2025":19310,"fobYtd2026":769,"pctVar":-96.01760745727603},{"pais":"Guiné","fobYtd2025":491,"fobYtd2026":310,"pctVar":-36.86354378818738},{"pais":"Bulgária","fobYtd2025":144,"fobYtd2026":264,"pctVar":83.33333333333334},{"pais":"Tunísia","fobYtd2025":177,"fobYtd2026":238,"pctVar":34.463276836158194},{"pais":"Nigéria","fobYtd2025":78,"fobYtd2026":113,"pctVar":44.871794871794876},{"pais":"Bósnia-Herzegovina","fobYtd2025":11169,"fobYtd2026":0,"pctVar":-100},{"pais":"Eslovênia","fobYtd2025":218,"fobYtd2026":0,"pctVar":-100},{"pais":"Singapura","fobYtd2025":107,"fobYtd2026":0,"pctVar":-100}],"urfYtd":[{"urf":"0817800 - PORTO DE SANTOS","fobYtd2025":38553651,"fobYtd2026":40488644,"pctVar":5.018961757992777},{"urf":"0927700 - PORTO DE SAO FRANCISCO DO SUL","fobYtd2025":13826556,"fobYtd2026":15709833,"pctVar":13.620723772427493},{"urf":"0927800 - ITAJAI","fobYtd2025":5280524,"fobYtd2026":11746055,"pctVar":122.44108728603449},{"urf":"0917800 - PORTO DE PARANAGUA","fobYtd2025":2065458,"fobYtd2026":2908415,"pctVar":40.81211043749134},{"urf":"0727600 - PORTO DE VITORIA","fobYtd2025":243056,"fobYtd2026":2331708,"pctVar":859.329537225989},{"urf":"0817600 - AEROPORTO INTERNACIONAL DE SAO PAULO/GUARULHOS","fobYtd2025":1454941,"fobYtd2026":1578827,"pctVar":8.514846993795624},{"urf":"0817700 - AEROPORTO INTERNACIONAL DE VIRACOPOS","fobYtd2025":727022,"fobYtd2026":810044,"pctVar":11.419461859476055},{"urf":"0717600 - PORTO DO RIO DE JANEIRO","fobYtd2025":1103036,"fobYtd2026":583317,"pctVar":-47.11713851587799},{"urf":"0227600 - PORTO DE MANAUS","fobYtd2025":215347,"fobYtd2026":499760,"pctVar":132.07195828128556},{"urf":"0610600 - VARGINHA","fobYtd2025":0,"fobYtd2026":385182,"pctVar":null},{"urf":"0927501 - IRF - AEROPORTO INTERNACIONAL DE FLORIANÓPOLIS","fobYtd2025":5110,"fobYtd2026":372553,"pctVar":7190.6653620352245},{"urf":"1017700 - PORTO DE RIO GRANDE","fobYtd2025":446898,"fobYtd2026":285336,"pctVar":-36.15187358189117},{"urf":"0317900 - ALF - FORTALEZA","fobYtd2025":0,"fobYtd2026":141717,"pctVar":null},{"urf":"0917500 - ALF - FOZ DO IGUAÇU","fobYtd2025":85882,"fobYtd2026":82239,"pctVar":-4.241866747397592},{"urf":"1017800 - ALF - PORTO ALEGRE","fobYtd2025":0,"fobYtd2026":75653,"pctVar":null},{"urf":"0417902 - IRF - PORTO DE SUAPE","fobYtd2025":372344,"fobYtd2026":75326,"pctVar":-79.76978278151387},{"urf":"0817900 - SAO PAULO","fobYtd2025":15349,"fobYtd2026":71723,"pctVar":367.28125610788976},{"urf":"0927502 - IRF - IMBITUBA","fobYtd2025":0,"fobYtd2026":47499,"pctVar":null},{"urf":"0227700 - AEROPORTO EDUARDO GOMES","fobYtd2025":69550,"fobYtd2026":44769,"pctVar":-35.63048166786484},{"urf":"1010600 - CAXIAS DO SUL","fobYtd2025":0,"fobYtd2026":38528,"pctVar":null},{"urf":"1010700 - NOVO HAMBURGO","fobYtd2025":9750,"fobYtd2026":26650,"pctVar":173.33333333333334},{"urf":"1017801 - IRF - AEROPORTO INTERNACIONAL SALGADO FILHO","fobYtd2025":3290,"fobYtd2026":26274,"pctVar":698.6018237082067},{"urf":"1017500 - ALF - URUGUAIANA","fobYtd2025":5502,"fobYtd2026":23401,"pctVar":325.3180661577608},{"urf":"0617700 - ALF - BELO HORIZONTE","fobYtd2025":113290,"fobYtd2026":20548,"pctVar":-81.86247682937594},{"urf":"0317901 - IRF - AEROPORTO INTERNACIONAL PINTO MARTINS","fobYtd2025":4640,"fobYtd2026":19734,"pctVar":325.301724137931},{"urf":"0717700 - AEROPORTO INTERNACIONAL DO RIO DE JANEIRO","fobYtd2025":19680,"fobYtd2026":15005,"pctVar":-23.755081300813007},{"urf":"1010252 - JAGUARAO","fobYtd2025":7832,"fobYtd2026":14046,"pctVar":79.341164453524},{"urf":"0917900 - ALF - CURITIBA","fobYtd2025":13046,"fobYtd2026":9617,"pctVar":-26.283918442434462},{"urf":"0117600 - AEROPORTO INTERNACIONAL DE BRASILIA","fobYtd2025":47547,"fobYtd2026":6974,"pctVar":-85.33240793320293},{"urf":"0920200 - JOINVILLE","fobYtd2025":0,"fobYtd2026":4777,"pctVar":null},{"urf":"0230154 - Assis Brasil","fobYtd2025":3847,"fobYtd2026":4412,"pctVar":14.686768910839614},{"urf":"0710300 - NOVA IGUACU","fobYtd2025":0,"fobYtd2026":1723,"pctVar":null},{"urf":"0317902 - IRF - PORTO DE PECÉM","fobYtd2025":0,"fobYtd2026":1007,"pctVar":null},{"urf":"0417901 - IRF - AEROPORTO INTERNACIONAL DOS GUARARAPES","fobYtd2025":14604,"fobYtd2026":796,"pctVar":-94.54943850999726},{"urf":"0717800 - PORTO DE ITAGUAI","fobYtd2025":0,"fobYtd2026":101,"pctVar":null},{"urf":"0517800 - ALF - SALVADOR","fobYtd2025":2779,"fobYtd2026":0,"pctVar":-100}],"cityYtd":[{"municipio":"Itajaí - SC","fobYtd2025":11643702,"fobYtd2026":15631692,"pctVar":34.250189501586355},{"municipio":"São Paulo - SP","fobYtd2025":11502844,"fobYtd2026":13406740,"pctVar":16.55152412742449},{"municipio":"Regente Feijó - SP","fobYtd2025":3356138,"fobYtd2026":4822632,"pctVar":43.69587901331828},{"municipio":"São Bernardo do Campo - SP","fobYtd2025":3985641,"fobYtd2026":3807229,"pctVar":-4.476369045782096},{"municipio":"Contagem - MG","fobYtd2025":1163120,"fobYtd2026":1035102,"pctVar":-11.006430978746819},{"municipio":"Vila Velha - ES","fobYtd2025":324390,"fobYtd2026":822226,"pctVar":153.46835599124512},{"municipio":"Jaraguá do Sul - SC","fobYtd2025":363379,"fobYtd2026":761276,"pctVar":109.49917303971885},{"municipio":"Joinville - SC","fobYtd2025":514873,"fobYtd2026":740161,"pctVar":43.75603304115772},{"municipio":"Belo Horizonte - MG","fobYtd2025":378418,"fobYtd2026":707932,"pctVar":87.07672468011563},{"municipio":"Barueri - SP","fobYtd2025":1560252,"fobYtd2026":692568,"pctVar":-55.611785788449566},{"municipio":"Ibiporã - PR","fobYtd2025":388984,"fobYtd2026":560510,"pctVar":44.09590111675544},{"municipio":"Goiânia - GO","fobYtd2025":409434,"fobYtd2026":523834,"pctVar":27.941011249676386},{"municipio":"Palhoça - SC","fobYtd2025":407758,"fobYtd2026":476182,"pctVar":16.780541399555617},{"municipio":"Monsenhor Paulo - MG","fobYtd2025":220224,"fobYtd2026":463682,"pctVar":110.55016710258644},{"municipio":"Maringá - PR","fobYtd2025":85157,"fobYtd2026":412594,"pctVar":384.5097878037037},{"municipio":"Jundiaí - SP","fobYtd2025":450942,"fobYtd2026":404136,"pctVar":-10.379605359447556},{"municipio":"Mauá - SP","fobYtd2025":422045,"fobYtd2026":361883,"pctVar":-14.254878034332833},{"municipio":"Serra - ES","fobYtd2025":186175,"fobYtd2026":357255,"pctVar":91.89203706190412},{"municipio":"Florianópolis - SC","fobYtd2025":200382,"fobYtd2026":354070,"pctVar":76.69750776017807},{"municipio":"Porto Velho - RO","fobYtd2025":361370,"fobYtd2026":340152,"pctVar":-5.871544400475966},{"municipio":"Cachoeiro de Itapemirim - ES","fobYtd2025":77380,"fobYtd2026":291335,"pctVar":276.4990953734815},{"municipio":"Recife - PE","fobYtd2025":146717,"fobYtd2026":260766,"pctVar":77.73400492103846},{"municipio":"São José - SC","fobYtd2025":76139,"fobYtd2026":224377,"pctVar":194.6939150763735},{"municipio":"Montes Claros - MG","fobYtd2025":118791,"fobYtd2026":220727,"pctVar":85.81121465430883},{"municipio":"Londrina - PR","fobYtd2025":160594,"fobYtd2026":174943,"pctVar":8.934953983336861},{"municipio":"Niterói - RJ","fobYtd2025":89139,"fobYtd2026":164622,"pctVar":84.68010635075555},{"municipio":"Manaus - AM","fobYtd2025":279610,"fobYtd2026":156292,"pctVar":-44.103572833589645},{"municipio":"Araraquara - SP","fobYtd2025":152595,"fobYtd2026":136445,"pctVar":-10.58357089026508},{"municipio":"Arapongas - PR","fobYtd2025":177007,"fobYtd2026":126363,"pctVar":-28.611297858276792},{"municipio":"Maceió - AL","fobYtd2025":108791,"fobYtd2026":104306,"pctVar":-4.122583669605023},{"municipio":"Araquari - SC","fobYtd2025":101585,"fobYtd2026":81204,"pctVar":-20.06300142737609},{"municipio":"Cajamar - SP","fobYtd2025":80063,"fobYtd2026":75108,"pctVar":-6.188876259945293},{"municipio":"Criciúma - SC","fobYtd2025":27162,"fobYtd2026":65346,"pctVar":140.57874972387896},{"municipio":"Osasco - SP","fobYtd2025":23464,"fobYtd2026":62685,"pctVar":167.15393794749403},{"municipio":"Lajeado - RS","fobYtd2025":40014,"fobYtd2026":54008,"pctVar":34.972759534163046},{"municipio":"Santos - SP","fobYtd2025":165,"fobYtd2026":46783,"pctVar":28253.333333333336},{"municipio":"Guarulhos - SP","fobYtd2025":21240,"fobYtd2026":42013,"pctVar":97.80131826741997},{"municipio":"Rio de Janeiro - RJ","fobYtd2025":49717,"fobYtd2026":39429,"pctVar":-20.693123076613634},{"municipio":"Porto Alegre - RS","fobYtd2025":85843,"fobYtd2026":39073,"pctVar":-54.483184418065534},{"municipio":"Patos de Minas - MG","fobYtd2025":11636,"fobYtd2026":38912,"pctVar":234.41045032657271},{"municipio":"Fortaleza - CE","fobYtd2025":0,"fobYtd2026":38155,"pctVar":null},{"municipio":"Apucarana - PR","fobYtd2025":42170,"fobYtd2026":36634,"pctVar":-13.12781598292625},{"municipio":"Brasília - DF","fobYtd2025":80434,"fobYtd2026":36501,"pctVar":-54.61993684262873},{"municipio":"Santo André - SP","fobYtd2025":59860,"fobYtd2026":34875,"pctVar":-41.73905780153692},{"municipio":"Dionísio Cerqueira - SC","fobYtd2025":3870,"fobYtd2026":30925,"pctVar":699.0956072351421},{"municipio":"Vitória - ES","fobYtd2025":3994,"fobYtd2026":28081,"pctVar":603.0796194291437},{"municipio":"Valparaíso de Goiás - GO","fobYtd2025":43467,"fobYtd2026":25217,"pctVar":-41.98587434145444},{"municipio":"Araçatuba - SP","fobYtd2025":8915,"fobYtd2026":24089,"pctVar":170.20751542344362},{"municipio":"Presidente Prudente - SP","fobYtd2025":41497,"fobYtd2026":23953,"pctVar":-42.27775501843507},{"municipio":"Curitiba - PR","fobYtd2025":21823,"fobYtd2026":17918,"pctVar":-17.893965082710903},{"municipio":"Anápolis - GO","fobYtd2025":0,"fobYtd2026":15462,"pctVar":null},{"municipio":"Cabedelo - PB","fobYtd2025":688,"fobYtd2026":15340,"pctVar":2129.6511627906975},{"municipio":"Jandira - SP","fobYtd2025":0,"fobYtd2026":13386,"pctVar":null},{"municipio":"Sarandi - PR","fobYtd2025":20550,"fobYtd2026":13384,"pctVar":-34.87104622871046},{"municipio":"São José dos Campos - SP","fobYtd2025":13530,"fobYtd2026":12949,"pctVar":-4.294161123429416},{"municipio":"Jaboticabal - SP","fobYtd2025":0,"fobYtd2026":11110,"pctVar":null},{"municipio":"Monte Carmelo - MG","fobYtd2025":0,"fobYtd2026":10600,"pctVar":null},{"municipio":"Guajará-Mirim - RO","fobYtd2025":35988,"fobYtd2026":9999,"pctVar":-72.21573857952652},{"municipio":"Limeira - SP","fobYtd2025":2789,"fobYtd2026":8727,"pctVar":212.90785227680172},{"municipio":"Hortolândia - SP","fobYtd2025":6907,"fobYtd2026":6806,"pctVar":-1.4622846387722601},{"municipio":"Itapeva - MG","fobYtd2025":6575,"fobYtd2026":6761,"pctVar":2.8288973384030416},{"municipio":"Itapecerica da Serra - SP","fobYtd2025":0,"fobYtd2026":6488,"pctVar":null},{"municipio":"Pirassununga - SP","fobYtd2025":0,"fobYtd2026":6017,"pctVar":null},{"municipio":"Navegantes - SC","fobYtd2025":15000,"fobYtd2026":5354,"pctVar":-64.30666666666667},{"municipio":"Passo Fundo - RS","fobYtd2025":0,"fobYtd2026":5256,"pctVar":null},{"municipio":"Balneário Camboriú - SC","fobYtd2025":9017,"fobYtd2026":4547,"pctVar":-49.573028723522235},{"municipio":"Nova Iguaçu - RJ","fobYtd2025":3715,"fobYtd2026":4292,"pctVar":15.531628532974429},{"municipio":"Andradina - SP","fobYtd2025":0,"fobYtd2026":4239,"pctVar":null},{"municipio":"Santa Cruz do Rio Pardo - SP","fobYtd2025":0,"fobYtd2026":2866,"pctVar":null},{"municipio":"Americana - SP","fobYtd2025":0,"fobYtd2026":2329,"pctVar":null},{"municipio":"Bom Retiro - SC","fobYtd2025":0,"fobYtd2026":1922,"pctVar":null},{"municipio":"Sapucaia do Sul - RS","fobYtd2025":6354,"fobYtd2026":1896,"pctVar":-70.16052880075543},{"municipio":"Campinas - SP","fobYtd2025":5088,"fobYtd2026":1697,"pctVar":-66.64701257861635},{"municipio":"São José do Calçado - ES","fobYtd2025":0,"fobYtd2026":1640,"pctVar":null},{"municipio":"Toledo - PR","fobYtd2025":1321,"fobYtd2026":622,"pctVar":-52.91445874337622},{"municipio":"Taquari - RS","fobYtd2025":1823,"fobYtd2026":600,"pctVar":-67.08721886999452},{"municipio":"Ribeirão Pires - SP","fobYtd2025":0,"fobYtd2026":414,"pctVar":null},{"municipio":"Boituva - SP","fobYtd2025":0,"fobYtd2026":330,"pctVar":null},{"municipio":"Caieiras - SP","fobYtd2025":0,"fobYtd2026":312,"pctVar":null},{"municipio":"Aparecida de Goiânia - GO","fobYtd2025":0,"fobYtd2026":242,"pctVar":null},{"municipio":"Pelotas - RS","fobYtd2025":0,"fobYtd2026":211,"pctVar":null},{"municipio":"Fundão - ES","fobYtd2025":0,"fobYtd2026":199,"pctVar":null},{"municipio":"Chapecó - SC","fobYtd2025":0,"fobYtd2026":186,"pctVar":null},{"municipio":"Colombo - PR","fobYtd2025":0,"fobYtd2026":77,"pctVar":null},{"municipio":"Camaçari - BA","fobYtd2025":0,"fobYtd2026":72,"pctVar":null},{"municipio":"Palmas - TO","fobYtd2025":746,"fobYtd2026":38,"pctVar":-94.90616621983914},{"municipio":"Poços de Caldas - MG","fobYtd2025":51089,"fobYtd2026":0,"pctVar":-100},{"municipio":"Botuverá - SC","fobYtd2025":13946,"fobYtd2026":0,"pctVar":-100},{"municipio":"Queimados - RJ","fobYtd2025":6100,"fobYtd2026":0,"pctVar":-100},{"municipio":"Sorocaba - SP","fobYtd2025":2793,"fobYtd2026":0,"pctVar":-100},{"municipio":"Carapicuíba - SP","fobYtd2025":2412,"fobYtd2026":0,"pctVar":-100},{"municipio":"Itumbiara - GO","fobYtd2025":2627,"fobYtd2026":0,"pctVar":-100},{"municipio":"Muqui - ES","fobYtd2025":425,"fobYtd2026":0,"pctVar":-100},{"municipio":"Franca - SP","fobYtd2025":334,"fobYtd2026":0,"pctVar":-100},{"municipio":"Santa Rita do Sapucaí - MG","fobYtd2025":313,"fobYtd2026":0,"pctVar":-100},{"municipio":"Pato Branco - PR","fobYtd2025":235,"fobYtd2026":0,"pctVar":-100},{"municipio":"Santa Isabel - SP","fobYtd2025":204,"fobYtd2026":0,"pctVar":-100},{"municipio":"Itapoá - SC","fobYtd2025":156,"fobYtd2026":0,"pctVar":-100},{"municipio":"São Roque - SP","fobYtd2025":96,"fobYtd2026":0,"pctVar":-100}],"competitorData":[{"nome":"Sonotec","municipio":"Regente Feijó - SP","fobYtd2025":3356138,"fobYtd2026":4822632,"pctVar":43.69587901331828,"monthly":[{"ym":"2024-01","fob":319932},{"ym":"2024-02","fob":329964},{"ym":"2024-03","fob":675723},{"ym":"2024-04","fob":862622},{"ym":"2024-05","fob":211331},{"ym":"2024-06","fob":268444},{"ym":"2024-07","fob":431242},{"ym":"2024-08","fob":427089},{"ym":"2024-09","fob":283433},{"ym":"2024-10","fob":674294},{"ym":"2024-11","fob":329218},{"ym":"2024-12","fob":544403},{"ym":"2025-01","fob":861640},{"ym":"2025-02","fob":578489},{"ym":"2025-03","fob":96740},{"ym":"2025-04","fob":192576},{"ym":"2025-05","fob":158026},{"ym":"2025-06","fob":845381},{"ym":"2025-07","fob":559988},{"ym":"2025-08","fob":63298},{"ym":"2025-09","fob":961451},{"ym":"2025-10","fob":785486},{"ym":"2025-11","fob":838922},{"ym":"2025-12","fob":661799},{"ym":"2026-01","fob":369979},{"ym":"2026-02","fob":860869},{"ym":"2026-03","fob":722241},{"ym":"2026-04","fob":1033310},{"ym":"2026-05","fob":44194},{"ym":"2026-06","fob":603706},{"ym":"2026-07","fob":682862},{"ym":"2026-08","fob":505471}]},{"nome":"Tagima","municipio":"São Bernardo do Campo - SP","fobYtd2025":3985641,"fobYtd2026":3807229,"pctVar":-4.476369045782096,"monthly":[{"ym":"2024-01","fob":318219},{"ym":"2024-02","fob":297214},{"ym":"2024-03","fob":407578},{"ym":"2024-04","fob":64963},{"ym":"2024-05","fob":330986},{"ym":"2024-06","fob":430238},{"ym":"2024-07","fob":308394},{"ym":"2024-08","fob":568739},{"ym":"2024-09","fob":596337},{"ym":"2024-10","fob":751850},{"ym":"2024-11","fob":427556},{"ym":"2024-12","fob":850812},{"ym":"2025-01","fob":567379},{"ym":"2025-02","fob":827791},{"ym":"2025-03","fob":642890},{"ym":"2025-04","fob":180714},{"ym":"2025-05","fob":236939},{"ym":"2025-06","fob":564794},{"ym":"2025-07","fob":201487},{"ym":"2025-08","fob":763647},{"ym":"2025-09","fob":738323},{"ym":"2025-10","fob":415503},{"ym":"2025-11","fob":136329},{"ym":"2025-12","fob":344846},{"ym":"2026-01","fob":516628},{"ym":"2026-02","fob":259340},{"ym":"2026-03","fob":316296},{"ym":"2026-04","fob":523333},{"ym":"2026-05","fob":426479},{"ym":"2026-06","fob":392418},{"ym":"2026-07","fob":568504},{"ym":"2026-08","fob":804231}]},{"nome":"Grupo Classic","municipio":"Contagem - MG","fobYtd2025":1163120,"fobYtd2026":1035102,"pctVar":-11.006430978746819,"monthly":[{"ym":"2024-01","fob":36167},{"ym":"2024-02","fob":122075},{"ym":"2024-03","fob":53254},{"ym":"2024-04","fob":165914},{"ym":"2024-05","fob":0},{"ym":"2024-06","fob":195917},{"ym":"2024-07","fob":183578},{"ym":"2024-08","fob":59335},{"ym":"2024-09","fob":313109},{"ym":"2024-10","fob":236334},{"ym":"2024-11","fob":72848},{"ym":"2024-12","fob":136545},{"ym":"2025-01","fob":229576},{"ym":"2025-02","fob":246385},{"ym":"2025-03","fob":275363},{"ym":"2025-04","fob":186290},{"ym":"2025-05","fob":0},{"ym":"2025-06","fob":125170},{"ym":"2025-07","fob":100336},{"ym":"2025-08","fob":0},{"ym":"2025-09","fob":53959},{"ym":"2025-10","fob":36214},{"ym":"2025-11","fob":141987},{"ym":"2025-12","fob":540578},{"ym":"2026-01","fob":89894},{"ym":"2026-02","fob":23758},{"ym":"2026-03","fob":559504},{"ym":"2026-04","fob":183390},{"ym":"2026-05","fob":0},{"ym":"2026-06","fob":0},{"ym":"2026-07","fob":95895},{"ym":"2026-08","fob":82661}]},{"nome":"Itajaí (porto)","municipio":"Itajaí - SC","fobYtd2025":11643702,"fobYtd2026":15631692,"pctVar":34.250189501586355,"monthly":[{"ym":"2024-01","fob":1818258},{"ym":"2024-02","fob":1020208},{"ym":"2024-03","fob":872575},{"ym":"2024-04","fob":1645992},{"ym":"2024-05","fob":1042240},{"ym":"2024-06","fob":1934531},{"ym":"2024-07","fob":1193244},{"ym":"2024-08","fob":964195},{"ym":"2024-09","fob":1892748},{"ym":"2024-10","fob":1971866},{"ym":"2024-11","fob":1219770},{"ym":"2024-12","fob":1456688},{"ym":"2025-01","fob":2154079},{"ym":"2025-02","fob":850429},{"ym":"2025-03","fob":1711617},{"ym":"2025-04","fob":962765},{"ym":"2025-05","fob":1983865},{"ym":"2025-06","fob":1507047},{"ym":"2025-07","fob":1215257},{"ym":"2025-08","fob":1258643},{"ym":"2025-09","fob":1619297},{"ym":"2025-10","fob":1612206},{"ym":"2025-11","fob":1860674},{"ym":"2025-12","fob":1546470},{"ym":"2026-01","fob":2487199},{"ym":"2026-02","fob":1033107},{"ym":"2026-03","fob":1520869},{"ym":"2026-04","fob":2482075},{"ym":"2026-05","fob":1937970},{"ym":"2026-06","fob":1354222},{"ym":"2026-07","fob":3147707},{"ym":"2026-08","fob":1668543}]}],"ptaxMonthly":[{"ym":"2024-01","media":4.9144},{"ym":"2024-02","media":4.9644},{"ym":"2024-03","media":4.9801},{"ym":"2024-04","media":5.1291},{"ym":"2024-05","media":5.133},{"ym":"2024-06","media":5.389},{"ym":"2024-07","media":5.542},{"ym":"2024-08","media":5.5526},{"ym":"2024-09","media":5.5416},{"ym":"2024-10","media":5.6241},{"ym":"2024-11","media":5.8071},{"ym":"2024-12","media":6.097},{"ym":"2025-01","media":6.0218},{"ym":"2025-02","media":5.7656},{"ym":"2025-03","media":5.7468},{"ym":"2025-04","media":5.7791},{"ym":"2025-05","media":5.6674},{"ym":"2025-06","media":5.5471},{"ym":"2025-07","media":5.5285},{"ym":"2025-08","media":5.4469},{"ym":"2025-09","media":5.3674},{"ym":"2025-10","media":5.3855},{"ym":"2025-11","media":5.3409},{"ym":"2025-12","media":5.4531},{"ym":"2026-01","media":5.338},{"ym":"2026-02","media":5.2006},{"ym":"2026-03","media":5.2316},{"ym":"2026-04","media":5.0331},{"ym":"2026-05","media":4.9837},{"ym":"2026-06","media":5.1276},{"ym":"2026-07","media":5.1139},{"ym":"2026-08","media":5.1532},{"ym":"2026-09","media":5.129}],"tarifas":[{"ncm":"92021000","descricao":"Instrumentos de cordas com arco (violinos, violas, violoncelos)","aliquotaAtual":16.2,"aliquotaNova":0,"vigencia":"2026-10-01"},{"ncm":"92029000","descricao":"Outros instrumentos de cordas (violões, guitarras acústicas, harpas)","aliquotaAtual":16.2,"aliquotaNova":0,"vigencia":"2026-10-01"},{"ncm":"92051000","descricao":"Instrumentos de sopro \"metais\" (trompetes, trombones, tubas)","aliquotaAtual":16.2,"aliquotaNova":0,"vigencia":"2026-10-01"},{"ncm":"92059000","descricao":"Outros instrumentos de sopro (sax, clarinete, flauta, acordeão)","aliquotaAtual":16.2,"aliquotaNova":0,"vigencia":"2026-10-01"},{"ncm":"92071010","descricao":"Sintetizadores","aliquotaAtual":9,"aliquotaNova":9,"vigencia":null},{"ncm":"92079010","descricao":"Guitarras e contrabaixos elétricos","aliquotaAtual":16.2,"aliquotaNova":16.2,"vigencia":null},{"ncm":"92060000","descricao":"Instrumentos de percussão","aliquotaAtual":16.2,"aliquotaNova":16.2,"vigencia":null}]};
+
+const fmtUSD = v => '$' + Math.abs(v) >= 1e6 ? ((v<0?'-':'')+'$'+(Math.abs(v)/1e6).toFixed(2)+'M') : ((v<0?'-':'')+'$'+Math.abs(v).toLocaleString('pt-BR'));
+function usd(v){
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '-' : '';
+  if(abs >= 1e6) return sign + 'US$ ' + (abs/1e6).toFixed(2) + 'M';
+  if(abs >= 1e3) return sign + 'US$ ' + (abs/1e3).toFixed(0) + 'k';
+  return sign + 'US$ ' + abs.toFixed(0);
+}
+function pctLabel(pct){
+  if(pct === null) return '<span class="pill zero">novo</span>';
+  const cls = pct >= 0 ? 'up' : 'down';
+  const arrow = pct >= 0 ? '&#9650;' : '&#9660;';
+  return '<span class="pill '+cls+'">'+arrow+' '+Math.abs(pct).toFixed(1)+'%</span>';
+}
+function ncmFmt(code){ return code.slice(0,4)+'.'+code.slice(4,6)+'.'+code.slice(6,8); }
+
+const CSS = getComputedStyle(document.documentElement);
+const COLORS = { blue:'#2a78d6', orange:'#eb6834', aqua:'#1baf7a', yellow:'#eda100', magenta:'#e87ba4', gray:'#8a8880' };
+
+Chart.defaults.font.family = "-apple-system,Segoe UI,Roboto,Arial,sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = CSS.getPropertyValue('--text-muted').trim() || '#8a8880';
+
+// ---------- KPIs ----------
+(function(){
+  const total25 = DATA.ncmTable.reduce((a,x)=>a+x.fobYtd2025,0);
+  const total26 = DATA.ncmTable.reduce((a,x)=>a+x.fobYtd2026,0);
+  const pctTotal = total25>0 ? ((total26-total25)/total25*100) : null;
+  const topRiser = [...DATA.ncmTable].filter(x=>x.pctVar!==null && x.fobYtd2026>500000).sort((a,b)=>b.pctVar-a.pctVar)[0];
+  const topCountry = [...DATA.countryYtd].sort((a,b)=>b.fobYtd2026-a.fobYtd2026)[0];
+  const cards = [
+    {lbl:'FOB total cap. 92 — YTD 2026', val: usd(total26), delta: pctTotal},
+    {lbl:'FOB total cap. 92 — YTD 2025', val: usd(total25), delta: null},
+    {lbl:'Maior alta entre NCMs', val: ncmFmt(topRiser.ncm), delta: topRiser.pctVar, sub: topRiser.descricao},
+    {lbl:'Principal país de origem 2026', val: topCountry.pais, delta: topCountry.pctVar},
+  ];
+  document.getElementById('kpi-overview').innerHTML = cards.map(c=>`
+    <div class="kpi">
+      <div class="lbl">${c.lbl}</div>
+      <div class="val">${c.val}</div>
+      ${c.delta!==undefined && c.delta!==null ? `<div class="delta ${c.delta>=0?'up':'down'}">${c.delta>=0?'&#9650;':'&#9660;'} ${Math.abs(c.delta).toFixed(1)}% vs 2025</div>` : ''}
+    </div>`).join('');
+})();
+
+// ---------- Overall trend ----------
+(function(){
+  const labels = DATA.overallMonthly.map(x=>x.ym);
+  new Chart(document.getElementById('chartOverall'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'FOB mensal', data: DATA.overallMonthly.map(x=>x.fob), borderColor: COLORS.orange, backgroundColor:'rgba(235,104,52,0.1)', fill:true, borderWidth:2, tension:.25, pointRadius:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>usd(v) } }, x:{ ticks:{ maxRotation:60, autoSkip:true, maxTicksLimit:14 } } } }
+  });
+})();
+
+// ---------- NCM table ----------
+(function(){
+  document.getElementById('tbl-ncm').innerHTML = DATA.ncmTable.map(r=>`
+    <tr><td>${ncmFmt(r.ncm)}</td><td>${r.descricao}</td>
+    <td class="num">${usd(r.fobYtd2025)}</td><td class="num">${usd(r.fobYtd2026)}</td>
+    <td class="num">${pctLabel(r.pctVar)}</td></tr>`).join('');
+})();
+
+// ---------- NCM detail cards ----------
+(function(){
+  const TARIFF_BY_NCM = Object.fromEntries(DATA.tarifas.map(t=>[t.ncm,t]));
+  const codes = Object.keys(DATA.ncmMonthly);
+  const html = codes.map((code,i)=>{
+    const row = DATA.ncmTable.find(x=>x.ncm===code) || {fobYtd2025:0,fobYtd2026:0,pctVar:null,descricao:''};
+    const tarifa = TARIFF_BY_NCM[code];
+    let tarifaBadge = '';
+    if(tarifa){
+      tarifaBadge = tarifa.aliquotaNova < tarifa.aliquotaAtual
+        ? `<span class="tag" style="border-color:var(--good);color:var(--good-ink);">II ${tarifa.aliquotaAtual}% &#8594; 0% em 01/10/2026</span>`
+        : `<span class="tag">II mantido em ${tarifa.aliquotaAtual}%</span>`;
+    }
+    return `<div class="card">
+      <h3>${ncmFmt(code)} — ${row.descricao} ${tarifaBadge}</h3>
+      <div class="kpi-row" style="margin-bottom:10px;">
+        <div class="kpi"><div class="lbl">FOB YTD 2025</div><div class="val" style="font-size:18px;">${usd(row.fobYtd2025)}</div></div>
+        <div class="kpi"><div class="lbl">FOB YTD 2026</div><div class="val" style="font-size:18px;">${usd(row.fobYtd2026)}</div></div>
+        <div class="kpi"><div class="lbl">Variação</div><div class="val" style="font-size:18px;">${pctLabel(row.pctVar)}</div></div>
+      </div>
+      <div class="grid2">
+        <div><div class="chart-wrap" style="height:170px;"><canvas id="chart-ncm-${i}" role="img" aria-label="Tendência mensal de FOB para NCM ${ncmFmt(code)}"></canvas></div></div>
+        <div>
+          <table><thead><tr><th>País</th><th class="num">FOB (25+26)</th></tr></thead>
+          <tbody>${(DATA.ncmTopCountries[code]||[]).map(c=>`<tr><td>${c.country}</td><td class="num">${usd(c.fob)}</td></tr>`).join('')}</tbody></table>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('ncm-cards').innerHTML = html;
+  codes.forEach((code,i)=>{
+    const series = DATA.ncmMonthly[code];
+    new Chart(document.getElementById('chart-ncm-'+i), {
+      type:'line',
+      data:{ labels: series.map(x=>x.ym), datasets:[{ data: series.map(x=>x.fob), borderColor: COLORS.blue, backgroundColor:'rgba(42,120,214,0.1)', fill:true, borderWidth:2, tension:.25, pointRadius:0 }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>usd(v) } }, x:{ ticks:{ maxTicksLimit:8 } } } }
+    });
+  });
+})();
+
+// ---------- Pais ----------
+(function(){
+  const top = [...DATA.countryYtd].sort((a,b)=>b.fobYtd2026-a.fobYtd2026).slice(0,10);
+  new Chart(document.getElementById('chartPais'), {
+    type:'bar',
+    data:{ labels: top.map(x=>x.pais), datasets:[
+      {label:'YTD 2025', data: top.map(x=>x.fobYtd2025), backgroundColor: COLORS.gray},
+      {label:'YTD 2026', data: top.map(x=>x.fobYtd2026), backgroundColor: COLORS.orange},
+    ]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top', labels:{boxWidth:10}}}, scales:{ x:{ ticks:{ callback:v=>usd(v) } } } }
+  });
+  document.getElementById('tbl-pais').innerHTML = [...DATA.countryYtd].sort((a,b)=>b.fobYtd2026-a.fobYtd2026).map(r=>`
+    <tr><td>${r.pais}</td><td class="num">${usd(r.fobYtd2025)}</td><td class="num">${usd(r.fobYtd2026)}</td><td class="num">${pctLabel(r.pctVar)}</td></tr>`).join('');
+})();
+
+// ---------- URF ----------
+(function(){
+  document.getElementById('tbl-urf').innerHTML = [...DATA.urfYtd].sort((a,b)=>b.fobYtd2026-a.fobYtd2026).map(r=>`
+    <tr><td>${r.urf}</td><td class="num">${usd(r.fobYtd2025)}</td><td class="num">${usd(r.fobYtd2026)}</td><td class="num">${pctLabel(r.pctVar)}</td></tr>`).join('');
+})();
+
+// ---------- Municipio ----------
+(function(){
+  document.getElementById('tbl-municipio').innerHTML = [...DATA.cityYtd].sort((a,b)=>b.fobYtd2026-a.fobYtd2026).slice(0,30).map(r=>`
+    <tr><td>${r.municipio}</td><td class="num">${usd(r.fobYtd2025)}</td><td class="num">${usd(r.fobYtd2026)}</td><td class="num">${pctLabel(r.pctVar)}</td></tr>`).join('');
+})();
+
+// ---------- Concorrentes ----------
+(function(){
+  const html = DATA.competitorData.map((c,i)=>`
+    <div class="card">
+      <h3>${c.nome} <span class="tag">${c.municipio}</span></h3>
+      <div class="kpi-row" style="margin-bottom:8px;">
+        <div class="kpi"><div class="lbl">FOB YTD 2025</div><div class="val" style="font-size:16px;">${usd(c.fobYtd2025)}</div></div>
+        <div class="kpi"><div class="lbl">FOB YTD 2026</div><div class="val" style="font-size:16px;">${usd(c.fobYtd2026)}</div></div>
+        <div class="kpi"><div class="lbl">Var.</div><div class="val" style="font-size:16px;">${pctLabel(c.pctVar)}</div></div>
+      </div>
+      <div class="chart-wrap" style="height:150px;"><canvas id="chart-comp-${i}" role="img" aria-label="Tendência mensal de FOB importado pelo município de ${c.nome}"></canvas></div>
+    </div>`).join('');
+  document.getElementById('competitor-cards').innerHTML = html;
+  DATA.competitorData.forEach((c,i)=>{
+    new Chart(document.getElementById('chart-comp-'+i), {
+      type:'line',
+      data:{ labels: c.monthly.map(x=>x.ym), datasets:[{ data: c.monthly.map(x=>x.fob), borderColor: COLORS.aqua, backgroundColor:'rgba(27,175,122,0.12)', fill:true, borderWidth:2, tension:.25, pointRadius:0 }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>usd(v) } }, x:{ ticks:{ maxTicksLimit:6 } } } }
+    });
+  });
+})();
+
+// ---------- Cambio ----------
+(function(){
+  new Chart(document.getElementById('chartPtax'), {
+    type:'line',
+    data:{ labels: DATA.ptaxMonthly.map(x=>x.ym), datasets:[{ label:'USD/BRL', data: DATA.ptaxMonthly.map(x=>x.media), borderColor: COLORS.magenta, backgroundColor:'rgba(232,123,164,0.1)', fill:true, borderWidth:2, tension:.2, pointRadius:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ maxTicksLimit:10 } } } }
+  });
+  document.getElementById('tbl-tarifas').innerHTML = DATA.tarifas.map(t=>`
+    <tr><td>${ncmFmt(t.ncm)}</td><td>${t.descricao}</td><td class="num">${t.aliquotaAtual}%</td>
+    <td class="num">${t.aliquotaNova < t.aliquotaAtual ? '<b style="color:var(--good-ink)">0%</b>' : t.aliquotaNova+'%'}</td></tr>`).join('');
+})();
+
+// ---------- Countdown & meta ----------
+(function(){
+  const target = new Date('2026-10-01T00:00:00-03:00');
+  const now = new Date();
+  const days = Math.ceil((target-now)/(1000*60*60*24));
+  document.getElementById('tariff-countdown').textContent = days > 0
+    ? `Faltam ${days} dia${days===1?'':'s'} para a tarifa zero entrar em vigor.`
+    : 'A tarifa zero já está em vigor desde 01/10/2026.';
+  document.getElementById('ytd-note').textContent = DATA.meta.ytdCorte;
+  document.getElementById('meta-note').textContent = 'Última atualização de dados Comex Stat: ' + DATA.meta.ultimaAtualizacaoComexStat + '. Snapshot gerado em ' + new Date(DATA.meta.geradoEm).toLocaleString('pt-BR') + '.';
+})();
+
+// ---------- Nav active state + mobile menu ----------
+(function(){
+  const links = [...document.querySelectorAll('.navlink')];
+  const sections = links.map(l=>document.querySelector(l.getAttribute('href')));
+  function onScroll(){
+    let idx = 0;
+    sections.forEach((s,i)=>{ if(s && s.getBoundingClientRect().top < 120) idx = i; });
+    links.forEach(l=>l.classList.remove('active'));
+    links[idx] && links[idx].classList.add('active');
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+  const btn = document.getElementById('menubtn');
+  const nav = document.getElementById('sidenav');
+  btn.addEventListener('click', ()=>nav.classList.toggle('open'));
+  links.forEach(l=>l.addEventListener('click', ()=>nav.classList.remove('open')));
+})();
+</script>
+</body>
+</html>
