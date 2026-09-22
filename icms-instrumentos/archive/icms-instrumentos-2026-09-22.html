@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instrumentos Musicais — Painel Setorial</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page-plane: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --gridline: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #256abf;
+    --series-1-wash: rgba(37,106,191,0.10);
+    --series-2: #eb6834;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --chip-bg: #f0efec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page-plane: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --gridline: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-1-wash: rgba(57,135,229,0.14);
+      --series-2: #d95926;
+      --good: #0ca30c;
+      --critical: #e66767;
+      --chip-bg: #26251f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.page-header {
+    padding: 24px 16px 8px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  header.page-header h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  header.page-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    max-width: 760px;
+    line-height: 1.5;
+  }
+  .disclaimer {
+    max-width: 1180px;
+    margin: 12px auto 0;
+    padding: 12px 16px;
+    background: var(--chip-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .disclaimer strong { color: var(--text-primary); }
+  .tabs {
+    max-width: 1180px;
+    margin: 20px auto 0;
+    padding: 0 16px;
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-btn[aria-selected="true"] {
+    color: var(--series-1);
+    border-bottom-color: var(--series-1);
+  }
+  .tab-btn:hover { color: var(--text-primary); }
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .kpi-delta {
+    font-size: 13px;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .kpi-delta.good { color: var(--good); }
+  .kpi-delta.critical { color: var(--critical); }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .preset-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .preset-btn {
+    appearance: none;
+    background: var(--surface-1);
+    border: none;
+    padding: 7px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+  }
+  .preset-btn:last-child { border-right: none; }
+  .preset-btn[aria-pressed="true"] {
+    background: var(--series-1);
+    color: #fff;
+  }
+  select, input[type="search"] {
+    font-size: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-primary);
+  }
+  input[type="search"] { min-width: 260px; }
+  .active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--series-1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 6px 6px 12px;
+    border-radius: 999px;
+  }
+  .active-chip button {
+    appearance: none;
+    background: rgba(255,255,255,0.25);
+    border: none;
+    color: #fff;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .active-chip button:hover { background: rgba(255,255,255,0.4); }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 15px;
+    margin: 0 0 2px;
+  }
+  .card .card-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+  }
+  .chart-wrap { position: relative; }
+  .legend-key {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 10px;
+  }
+  .legend-key span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend-key .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  details.table-toggle { margin-top: 10px; }
+  details.table-toggle summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--series-1);
+    font-weight: 600;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.compact th, table.compact td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--gridline);
+    text-align: left;
+  }
+  table.compact th { color: var(--text-secondary); font-weight: 600; }
+  table.compact td.num, table.compact th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  #cnpjTable th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  #cnpjTable th .arrow { font-size: 10px; color: var(--text-muted); margin-left: 4px; }
+  #cnpjTable td { vertical-align: top; }
+  #cnpjTable td.mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .pagination button {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+  footer.notes {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  footer.notes h3 { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+  footer.notes ul { margin: 0 0 16px; padding-left: 18px; }
+  footer.notes a { color: var(--series-1); }
+
+  @media (max-width: 640px) {
+    input[type="search"] { min-width: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1>Instrumentos Musicais — Painel Setorial</h1>
+  <p><span id="pageSubtitleCnae">CNAE 4756-3/00 · Comércio varejista especializado de instrumentos musicais e acessórios</span>. Dados públicos oficiais, sem estimativas.</p>
+</header>
+
+<div class="disclaimer">
+  <strong>O que este painel mostra e o que não mostra:</strong> a aba "Tendência Setorial" traz a arrecadação de ICMS
+  agregada por CNAE, publicada mensalmente pela SEFAZ-SP — é um indicador do setor no estado de São Paulo, não de
+  empresas individuais. A aba "CNPJs" traz o cadastro público de empresas (Receita Federal) — quantidade, localização,
+  razão social, nome fantasia e sócios. <strong>Não existe em nenhuma fonte pública o valor de ICMS pago por CNPJ
+  individual</strong>: essa informação é protegida por sigilo fiscal (Art. 198 do CTN). As duas abas usam fontes
+  diferentes e não devem ser cruzadas por empresa.
+</div>
+
+<div class="filter-row" style="max-width:1180px;margin:16px auto 0;padding:0 16px;">
+  <span style="font-size:13px;color:var(--text-secondary);font-weight:600;">Segmento:</span>
+  <div class="preset-group" id="segmentGroup">
+    <button class="preset-btn" data-segment="varejo" aria-pressed="true">Varejo (4756-3/00)</button>
+    <button class="preset-btn" data-segment="fabricacao" aria-pressed="false">Fabricação (3220-5/00)</button>
+  </div>
+  <span style="font-size:12px;color:var(--text-muted);">aplica-se às três abas abaixo</span>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn" role="tab" aria-selected="true" id="tab-btn-tendencia" data-tab="tendencia">Tendência Setorial</button>
+  <button class="tab-btn" role="tab" aria-selected="false" id="tab-btn-cnpjs" data-tab="cnpjs">CNPJs</button>
+  <button class="tab-btn" role="tab" aria-selected="false" id="tab-btn-comparativo" data-tab="comparativo">18% x Simples Nac.</button>
+</nav>
+
+<main>
+
+  <!-- ===================== TAB: TENDÊNCIA ===================== -->
+  <section class="tab-panel active" id="panel-tendencia" role="tabpanel" aria-labelledby="tab-btn-tendencia">
+
+    <div class="kpi-row" id="kpiTendencia"></div>
+
+    <div class="card">
+      <h2>Arrecadação mensal de ICMS — <span id="tendCnaeLabel">CNAE 4756-3/00</span></h2>
+      <p class="card-sub">SEFAZ-SP, Relatório da Receita Tributária (tabela 1.12). Valores nominais, em R$ mil.</p>
+      <div class="filter-row">
+        <div class="preset-group" id="presetGroup">
+          <button class="preset-btn" data-months="12">12 meses</button>
+          <button class="preset-btn" data-months="36" aria-pressed="true">36 meses</button>
+          <button class="preset-btn" data-months="60">60 meses</button>
+          <button class="preset-btn" data-months="all">Todo o período</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:340px;">
+        <canvas id="chartIcmsLine"></canvas>
+      </div>
+      <div class="legend-key">
+        <span><span class="dot" style="background:var(--series-1)"></span>Valor mensal</span>
+        <span><span class="dot" style="background:var(--text-muted)"></span>Média móvel (3 meses)</span>
+        <span><span class="dot" style="background:var(--text-muted); opacity:.6"></span>Tendência linear</span>
+      </div>
+      <details class="table-toggle">
+        <summary>Ver tabela de dados</summary>
+        <div id="icmsTableWrap" style="margin-top:10px; max-height:320px; overflow:auto;"></div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Variação anual (YoY) da arrecadação</h2>
+      <p class="card-sub">Comparação de cada mês com o mesmo mês do ano anterior.</p>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="chartIcmsYoy"></canvas>
+      </div>
+      <div class="legend-key">
+        <span><span class="dot" style="background:var(--good)"></span>Crescimento vs. ano anterior</span>
+        <span><span class="dot" style="background:var(--critical)"></span>Queda vs. ano anterior</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB: CNPJS ===================== -->
+  <section class="tab-panel" id="panel-cnpjs" role="tabpanel" aria-labelledby="tab-btn-cnpjs">
+
+    <div class="kpi-row" id="kpiCnpjs"></div>
+
+    <div class="filter-row">
+      <select id="ufFilter"></select>
+      <input type="search" id="searchBox" placeholder="Buscar por razão social, nome fantasia ou sócio…">
+      <span id="activeFilterChip" class="active-chip" style="display:none;"></span>
+    </div>
+    <p class="card-sub" style="margin:-8px 0 16px;">Dica: clique numa barra dos gráficos abaixo para filtrar por Estado ou Cidade.</p>
+
+    <div class="card">
+      <h2>Empresas ativas por Estado</h2>
+      <p class="card-sub">Top 15 UFs por número de CNPJs ativos (<span id="ufChartCnaeLabel">CNAE 4756-3/00</span>).</p>
+      <div class="chart-wrap" style="height:320px;">
+        <canvas id="chartUf"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Empresas ativas por Cidade</h2>
+      <p class="card-sub" id="cidadeSub">Top 15 municípios por número de CNPJs ativos.</p>
+      <div class="chart-wrap" style="height:320px;">
+        <canvas id="chartCidade"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Lista de empresas</h2>
+      <p class="card-sub" id="listaSub"></p>
+      <div style="overflow-x:auto;">
+        <table id="cnpjTable" class="compact">
+          <thead>
+            <tr>
+              <th data-key="cnpj">CNPJ</th>
+              <th data-key="razao_social">Razão social</th>
+              <th data-key="nome_fantasia">Nome fantasia</th>
+              <th data-key="uf">UF</th>
+              <th data-key="municipio">Município</th>
+              <th data-key="socios">Sócios</th>
+              <th data-key="data_inicio_atividade">Início de atividade</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button id="prevPage">Anterior</button>
+        <span id="pageInfo"></span>
+        <button id="nextPage">Próxima</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== TAB: 18% x SIMPLES NACIONAL ===================== -->
+  <section class="tab-panel" id="panel-comparativo" role="tabpanel" aria-labelledby="tab-btn-comparativo">
+
+    <div class="disclaimer" style="margin:0 0 20px;">
+      <strong>Isto é uma estimativa ilustrativa, não um dado oficial.</strong> Não existe faturamento do setor
+      publicado em nenhuma fonte pública — os valores abaixo são obtidos revertendo o ICMS arrecadado (SEFAZ-SP,
+      <span id="comparativoCnaeLabel">CNAE 4756-3/00</span>) por diferentes alíquotas efetivas hipotéticas. Cobre apenas São Paulo. O ICMS é um imposto
+      não cumulativo (incide sobre valor agregado, com créditos de compras) — dividir por uma alíquota fixa é uma
+      simplificação. Como muitas empresas desse CNAE são de pequeno porte, possivelmente optantes do Simples
+      Nacional, as faixas do Simples abaixo podem ser mais realistas que o regime normal (18% cheio) — mas isso
+      varia conforme o porte real de cada empresa, que não temos como saber.
+    </div>
+
+    <div class="kpi-row" id="kpiComparativo"></div>
+
+    <div class="card">
+      <h2>Faturamento estimado por cenário de alíquota</h2>
+      <p class="card-sub">Últimos 12 meses disponíveis, ICMS ÷ alíquota efetiva de cada cenário.</p>
+      <div class="chart-wrap" style="height:300px;">
+        <canvas id="chartCenarios"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Faixa de faturamento estimado ao longo do tempo</h2>
+      <p class="card-sub">Compara o limite inferior (regime normal, 18%) com os limites do Simples Nacional (Faixa 1 e Faixa 3), mês a mês.</p>
+      <div class="chart-wrap" style="height:320px;">
+        <canvas id="chartCenariosLinha"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tabela comparativa</h2>
+      <p class="card-sub" id="tabelaComparativaSub"></p>
+      <div style="overflow-x:auto;">
+        <table class="compact" id="tabelaComparativa">
+          <thead>
+            <tr>
+              <th>Cenário</th>
+              <th class="num">Alíquota efetiva</th>
+              <th class="num" id="colUltimoMesHead">Último mês</th>
+              <th class="num">Últimos 12 meses</th>
+              <th class="num">2025 (ano completo)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="notes">
+  <h3>Fontes e metodologia</h3>
+  <ul id="notesList"></ul>
+  <p id="collectedAt"></p>
+</footer>
+
+<script>
+function initDashboard() {
+  const D = DASHBOARD_DATA;
+  const fmtInt = (n) => new Intl.NumberFormat('pt-BR').format(n);
+  const fmtMoneyMil = (n) => n === null || n === undefined ? '—' : 'R$ ' + new Intl.NumberFormat('pt-BR', {maximumFractionDigits: 0}).format(n) + ' mil';
+  const fmtPct = (n) => n === null || n === undefined ? '—' : (n > 0 ? '+' : '') + n.toFixed(1).replace('.', ',') + '%';
+
+  const css = getComputedStyle(document.documentElement);
+  const cVar = (name) => css.getPropertyValue(name).trim();
+  function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    const n = parseInt(full, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+  }
+
+  // Data labels are off by default globally; each chart/dataset below opts in
+  // selectively (bar tips, single line endpoint) per the "label sparingly" rule —
+  // never a number on every point of a dense series.
+  Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', { display: false });
+
+  // ---------- Segments: varejo (4756-3/00) vs fabricação (3220-5/00) ----------
+  // Both datasets were collected by the same two pipelines (SEFAZ-SP tab112 for
+  // ICMS, Receita Federal Dados Abertos do CNPJ for the census); the resumo
+  // JSONs name their total fields after their own CNAE code, so normalize that
+  // one difference here rather than branching on it everywhere below.
+  function normalizeResumo(resumo, cnaeDigits) {
+    if (!resumo) return null;
+    return {
+      totalAtivas: resumo['total_nacional_cnpjs_ativos_cnae_' + cnaeDigits],
+      totalTodasSituacoes: resumo['total_nacional_cnpjs_todas_situacoes_cnae_' + cnaeDigits],
+      distribuicaoSituacao: resumo.distribuicao_situacao_cadastral,
+      timestampExecucao: resumo.timestamp_execucao,
+      limitacoes: resumo.limitacoes_e_observacoes || [],
+      mesReferenciaBase: resumo.mes_referencia_base,
+    };
+  }
+
+  // The detailed per-company table ships as arrays-of-arrays (see
+  // gerar_data_js.py) to avoid repeating 7 JSON key names on ~8,700 rows —
+  // that repetition was most of what pushed data.js past a size threshold
+  // where this environment's preview server started resetting the connection
+  // mid-transfer. Rehydrate into the row objects the rest of the code expects.
+  const DETALHADO_COLS = D.cnpj_detalhado_cols || ['cnpj', 'razao_social', 'nome_fantasia', 'uf', 'municipio', 'socios', 'data_inicio_atividade'];
+  function toRowObjects(rows) {
+    return (rows || []).map(r => {
+      const o = {};
+      DETALHADO_COLS.forEach((c, i) => { o[c] = r[i]; });
+      return o;
+    });
+  }
+
+  const DATASETS = {
+    varejo: {
+      cnaeLabel: 'CNAE 4756-3/00',
+      descricao: 'Comércio varejista especializado de instrumentos musicais e acessórios',
+      series: D.icms_series,
+      meta: D.icms_meta,
+      resumo: normalizeResumo(D.cnpj_resumo, '4756300'),
+      porUf: D.cnpj_por_uf,
+      porMunicipio: D.cnpj_por_municipio,
+      detalhado: toRowObjects(D.cnpj_detalhado),
+    },
+    fabricacao: {
+      cnaeLabel: 'CNAE 3220-5/00',
+      descricao: 'Fabricação de instrumentos musicais, peças e acessórios',
+      series: D.icms_series_manufatura || [],
+      meta: D.icms_meta_manufatura,
+      resumo: normalizeResumo(D.cnpj_resumo_manufatura, '3220500'),
+      porUf: D.cnpj_por_uf_manufatura || [],
+      porMunicipio: D.cnpj_por_municipio_manufatura || [],
+      detalhado: toRowObjects(D.cnpj_detalhado_manufatura),
+    },
+  };
+  let activeSegment = 'varejo';
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.setAttribute('aria-selected', 'true');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ========================================================
+  // TAB: TENDÊNCIA
+  // ========================================================
+  let series = DATASETS.varejo.series; // [{mes_referencia, valor_icms, variacao_mensal_pct, variacao_anual_pct, media_movel_3m}]
+  let trendCoef = DATASETS.varejo.meta.tendencia_linear_simples;
+
+  function trendValue(idx) {
+    return trendCoef.intercepto_R$mil + trendCoef.coeficiente_angular_por_mes_R$mil * idx;
+  }
+
+  // KPI tiles
+  function renderKpiTendencia() {
+    const last = series[series.length - 1];
+    const wrap = document.getElementById('kpiTendencia');
+    wrap.innerHTML = '';
+    const tiles = [
+      { label: 'Último mês disponível (' + last.mes_referencia + ')', value: fmtMoneyMil(last.valor_icms) },
+      { label: 'Variação anual (YoY) mais recente', value: fmtPct(last.variacao_anual_pct),
+        deltaClass: last.variacao_anual_pct > 0 ? 'good' : (last.variacao_anual_pct < 0 ? 'critical' : '') },
+      { label: 'Tendência linear (' + series.length + ' meses)', value: (trendCoef.coeficiente_angular_por_mes_R$mil >= 0 ? '+' : '') + trendCoef.coeficiente_angular_por_mes_R$mil.toFixed(2) + ' R$ mil/mês',
+        sub: trendCoef.coeficiente_angular_por_mes_R$mil >= 0 ? 'tendência de alta nominal' : 'tendência de queda nominal' },
+      { label: 'Período coberto', value: series.length + ' meses', sub: series[0].mes_referencia + ' a ' + last.mes_referencia },
+    ];
+    tiles.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'kpi-tile';
+      const label = document.createElement('div');
+      label.className = 'kpi-label';
+      label.textContent = t.label;
+      el.appendChild(label);
+      const valueEl = document.createElement('div');
+      valueEl.className = t.deltaClass !== undefined ? ('kpi-delta ' + t.deltaClass) : 'kpi-value';
+      valueEl.textContent = t.value;
+      el.appendChild(valueEl);
+      if (t.sub) {
+        const subEl = document.createElement('div');
+        subEl.className = 'kpi-sub';
+        subEl.textContent = t.sub;
+        el.appendChild(subEl);
+      }
+      wrap.appendChild(el);
+    });
+  }
+  renderKpiTendencia();
+
+  let icmsChart, yoyChart;
+  function sliceSeries(months) {
+    if (months === 'all') return series;
+    return series.slice(-months);
+  }
+
+  function renderIcmsLine(months) {
+    const data = sliceSeries(months);
+    const labels = data.map(d => d.mes_referencia);
+    const startIdx = series.length - data.length;
+    const trendData = data.map((_, i) => trendValue(startIdx + i));
+
+    if (icmsChart) icmsChart.destroy();
+    icmsChart = new Chart(document.getElementById('chartIcmsLine'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Valor mensal',
+            data: data.map(d => d.valor_icms),
+            borderColor: cVar('--series-1'),
+            backgroundColor: cVar('--series-1-wash'),
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.15,
+            spanGaps: true,
+            datalabels: {
+              display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1,
+              align: 'right',
+              anchor: 'end',
+              clip: false,
+              offset: 6,
+              color: cVar('--text-primary'),
+              font: { size: 11, weight: '600' },
+              formatter: (v) => fmtMoneyMil(v),
+            },
+          },
+          {
+            label: 'Média móvel (3 meses)',
+            data: data.map(d => d.media_movel_3m),
+            borderColor: cVar('--text-muted'),
+            borderWidth: 2,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            tension: 0.15,
+            spanGaps: true,
+          },
+          {
+            label: 'Tendência linear',
+            data: trendData,
+            borderColor: cVar('--text-muted'),
+            borderWidth: 1.5,
+            borderDash: [2, 3],
+            pointRadius: 0,
+            tension: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 56 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ctx.dataset.label + ': ' + fmtMoneyMil(ctx.parsed.y),
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: cVar('--text-muted'), maxTicksLimit: 12 } },
+          y: { grid: { color: cVar('--gridline') }, ticks: { color: cVar('--text-muted') }, beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  function renderIcmsYoy(months) {
+    const data = sliceSeries(months).filter(d => d.variacao_anual_pct !== null && d.variacao_anual_pct !== undefined);
+    const labels = data.map(d => d.mes_referencia);
+    if (yoyChart) yoyChart.destroy();
+    yoyChart = new Chart(document.getElementById('chartIcmsYoy'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Variação anual (%)',
+          data: data.map(d => d.variacao_anual_pct),
+          backgroundColor: data.map(d => d.variacao_anual_pct >= 0 ? cVar('--good') : cVar('--critical')),
+          borderRadius: 3,
+          maxBarThickness: 18,
+          // Bar tips only get a printed value when there's room to read them —
+          // past ~40 bars (the "60 meses" / "todo período" presets) labels would
+          // overlap and stop working, so they fall back to the tooltip + table.
+          datalabels: {
+            display: labels.length <= 40,
+            anchor: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
+            align: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
+            color: cVar('--text-secondary'),
+            font: { size: 10 },
+            formatter: (v) => Math.round(v) + '%',
+          },
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 16, bottom: 16 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => fmtPct(ctx.parsed.y) } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: cVar('--text-muted'), maxTicksLimit: 12 } },
+          y: { grid: { color: cVar('--gridline') }, ticks: { color: cVar('--text-muted'), callback: (v) => v + '%' } },
+        },
+      },
+    });
+  }
+
+  document.querySelectorAll('#presetGroup .preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#presetGroup .preset-btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      const months = btn.dataset.months === 'all' ? 'all' : parseInt(btn.dataset.months, 10);
+      renderIcmsLine(months);
+      renderIcmsYoy(months);
+    });
+  });
+  renderIcmsLine(36);
+  renderIcmsYoy(36);
+
+  // Table view (accessibility)
+  function renderIcmsTable() {
+    const wrap = document.getElementById('icmsTableWrap');
+    wrap.innerHTML = '';
+    const table = document.createElement('table');
+    table.className = 'compact';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>Mês</th><th class="num">Valor (R$ mil)</th><th class="num">Var. mensal</th><th class="num">Var. anual</th><th class="num">Média móvel 3m</th></tr>';
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    series.slice().reverse().forEach(d => {
+      const tr = document.createElement('tr');
+      const cells = [
+        d.mes_referencia,
+        d.valor_icms != null ? fmtMoneyMil(d.valor_icms) : '—',
+        fmtPct(d.variacao_mensal_pct),
+        fmtPct(d.variacao_anual_pct),
+        d.media_movel_3m != null ? fmtMoneyMil(d.media_movel_3m) : '—',
+      ];
+      cells.forEach((val, i) => {
+        const td = document.createElement('td');
+        if (i > 0) td.className = 'num';
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+  }
+  renderIcmsTable();
+
+  // ========================================================
+  // TAB: CNPJs
+  // ========================================================
+  let resumo = DATASETS.varejo.resumo;
+  let porUf = DATASETS.varejo.porUf;
+  let porMunicipio = DATASETS.varejo.porMunicipio;
+  let detalhado = DATASETS.varejo.detalhado;
+
+  function renderKpiCnpjs() {
+    const wrap = document.getElementById('kpiCnpjs');
+    wrap.innerHTML = '';
+    const topUf = porUf[0];
+    const topMun = porMunicipio[0];
+    const tiles = [
+      { label: 'CNPJs ativos (Brasil)', value: fmtInt(resumo.totalAtivas) },
+      { label: 'Estado líder', value: topUf.uf, sub: fmtInt(topUf.total_ativas) + ' empresas ativas' },
+      { label: 'Cidade líder', value: topMun.municipio + '/' + topMun.uf, sub: fmtInt(topMun.total_ativas) + ' empresas ativas' },
+      { label: 'Total histórico (todas as situações)', value: fmtInt(resumo.totalTodasSituacoes), sub: fmtInt(resumo.distribuicaoSituacao.BAIXADA) + ' baixadas' },
+    ];
+    tiles.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'kpi-tile';
+      const label = document.createElement('div');
+      label.className = 'kpi-label';
+      label.textContent = t.label;
+      const value = document.createElement('div');
+      value.className = 'kpi-value';
+      value.textContent = t.value;
+      el.appendChild(label);
+      el.appendChild(value);
+      if (t.sub) {
+        const sub = document.createElement('div');
+        sub.className = 'kpi-sub';
+        sub.textContent = t.sub;
+        el.appendChild(sub);
+      }
+      wrap.appendChild(el);
+    });
+  }
+  renderKpiCnpjs();
+
+  // UF filter dropdown
+  const ufFilter = document.getElementById('ufFilter');
+  function renderUfDropdownOptions() {
+    ufFilter.innerHTML = '';
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = 'Todos os Estados';
+    ufFilter.appendChild(optAll);
+    porUf.forEach(row => {
+      const opt = document.createElement('option');
+      opt.value = row.uf;
+      opt.textContent = row.uf + ' (' + fmtInt(row.total_ativas) + ')';
+      ufFilter.appendChild(opt);
+    });
+  }
+  renderUfDropdownOptions();
+
+  let ufChart, munChart;
+  let selectedMunicipio = null; // cross-filter: set by clicking a bar in the Cidade chart
+
+  function barColors(items, isSelectedFn) {
+    const solid = cVar('--series-1');
+    const dim = hexToRgba(solid, 0.30);
+    const anySelected = items.some(isSelectedFn);
+    return items.map(it => (!anySelected || isSelectedFn(it)) ? solid : dim);
+  }
+
+  let ufTop = [];
+  let munTop = [];
+
+  function renderUfChart() {
+    const top = porUf.slice(0, 15);
+    ufTop = top;
+    const selUf = ufFilter.value;
+    if (ufChart) ufChart.destroy();
+    ufChart = new Chart(document.getElementById('chartUf'), {
+      type: 'bar',
+      data: {
+        labels: top.map(r => r.uf),
+        datasets: [{
+          label: 'CNPJs ativos',
+          data: top.map(r => r.total_ativas),
+          backgroundColor: barColors(top, r => r.uf === selUf),
+          borderRadius: 3,
+          maxBarThickness: 22,
+          datalabels: {
+            display: true,
+            anchor: 'end',
+            align: 'end',
+            clip: false,
+            color: cVar('--text-primary'),
+            font: { size: 11, weight: '600' },
+            formatter: (v) => fmtInt(v),
+          },
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 36 } },
+        interaction: { mode: 'nearest', axis: 'y', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => fmtInt(ctx.parsed.x) + ' empresas' } },
+        },
+        scales: {
+          x: { grid: { color: cVar('--gridline') }, ticks: { color: cVar('--text-muted') }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color: cVar('--text-primary') } },
+        },
+      },
+    });
+  }
+
+  function renderMunChart(ufCode) {
+    const source = ufCode ? porMunicipio.filter(r => r.uf === ufCode) : porMunicipio;
+    const top = source.slice(0, 15);
+    munTop = top;
+    document.getElementById('cidadeSub').textContent = ufCode
+      ? 'Top 15 municípios de ' + ufCode + ' por número de CNPJs ativos.'
+      : 'Top 15 municípios por número de CNPJs ativos (Brasil).';
+    if (munChart) munChart.destroy();
+    munChart = new Chart(document.getElementById('chartCidade'), {
+      type: 'bar',
+      data: {
+        labels: top.map(r => r.municipio + '/' + r.uf),
+        datasets: [{
+          label: 'CNPJs ativos',
+          data: top.map(r => r.total_ativas),
+          backgroundColor: barColors(top, r => r.municipio === selectedMunicipio),
+          borderRadius: 3,
+          maxBarThickness: 22,
+          datalabels: {
+            display: true,
+            anchor: 'end',
+            align: 'end',
+            clip: false,
+            color: cVar('--text-primary'),
+            font: { size: 11, weight: '600' },
+            formatter: (v) => fmtInt(v),
+          },
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 36 } },
+        interaction: { mode: 'nearest', axis: 'y', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => fmtInt(ctx.parsed.x) + ' empresas' } },
+        },
+        scales: {
+          x: { grid: { color: cVar('--gridline') }, ticks: { color: cVar('--text-muted') }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color: cVar('--text-primary') } },
+        },
+      },
+    });
+  }
+
+  // Click-to-filter is wired directly on the canvas (rather than Chart.js's
+  // own onClick option) because that option silently stopped receiving
+  // elements once the datalabels plugin was added to this page — the two
+  // plugins appear to conflict on element hit-testing for click specifically
+  // (hover/tooltip were unaffected). getElementsAtEventForMode still resolves
+  // correctly when called from a plain DOM listener, so we use that instead.
+  // Attached once (not inside the render functions) so re-rendering a chart
+  // on every filter change never stacks duplicate listeners on the canvas.
+  document.getElementById('chartUf').addEventListener('click', (e) => {
+    if (!ufChart) return;
+    const els = ufChart.getElementsAtEventForMode(e, 'nearest', { axis: 'y', intersect: false }, true);
+    if (!els.length) return;
+    const uf = ufTop[els[0].index].uf;
+    ufFilter.value = (ufFilter.value === uf) ? '' : uf;
+    selectedMunicipio = null;
+    currentPage = 1;
+    applyCrossFilterChange();
+  });
+  document.getElementById('chartUf').addEventListener('mousemove', (e) => {
+    if (!ufChart) return;
+    const els = ufChart.getElementsAtEventForMode(e, 'nearest', { axis: 'y', intersect: false }, true);
+    e.target.style.cursor = els.length ? 'pointer' : 'default';
+  });
+  document.getElementById('chartCidade').addEventListener('click', (e) => {
+    if (!munChart) return;
+    const els = munChart.getElementsAtEventForMode(e, 'nearest', { axis: 'y', intersect: false }, true);
+    if (!els.length) return;
+    const row = munTop[els[0].index];
+    if (selectedMunicipio === row.municipio && ufFilter.value === row.uf) {
+      selectedMunicipio = null;
+    } else {
+      selectedMunicipio = row.municipio;
+      ufFilter.value = row.uf;
+    }
+    currentPage = 1;
+    applyCrossFilterChange();
+  });
+  document.getElementById('chartCidade').addEventListener('mousemove', (e) => {
+    if (!munChart) return;
+    const els = munChart.getElementsAtEventForMode(e, 'nearest', { axis: 'y', intersect: false }, true);
+    e.target.style.cursor = els.length ? 'pointer' : 'default';
+  });
+
+  function updateActiveFilterChip() {
+    const chip = document.getElementById('activeFilterChip');
+    chip.textContent = '';
+    const uf = ufFilter.value;
+    if (!uf && !selectedMunicipio) { chip.style.display = 'none'; return; }
+    chip.style.display = 'inline-flex';
+    const label = document.createElement('span');
+    label.textContent = 'Filtro: ' + (selectedMunicipio ? (selectedMunicipio + ' / ' + uf) : uf);
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.textContent = '×';
+    clearBtn.setAttribute('aria-label', 'Limpar filtro');
+    clearBtn.addEventListener('click', () => {
+      ufFilter.value = '';
+      selectedMunicipio = null;
+      currentPage = 1;
+      applyCrossFilterChange();
+    });
+    chip.appendChild(label);
+    chip.appendChild(clearBtn);
+  }
+
+  // Re-renders every view that depends on the current UF / município selection —
+  // called from the dropdown, the chip's clear button, and clicking a bar in
+  // either chart, so all three stay in sync (cross-filtering is the default
+  // interaction, the dropdown and chip are the accessible/keyboard equivalent).
+  function applyCrossFilterChange() {
+    renderUfChart();
+    renderMunChart(ufFilter.value);
+    renderTable();
+    updateActiveFilterChip();
+  }
+
+  renderUfChart();
+  renderMunChart('');
+  updateActiveFilterChip();
+
+  // ---- Table: filter, sort, paginate ----
+  let currentPage = 1;
+  const pageSize = 25;
+  let sortKey = 'razao_social';
+  let sortDir = 1;
+
+  function normalize(s) {
+    return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  function getFiltered() {
+    const uf = ufFilter.value;
+    const mun = selectedMunicipio ? normalize(selectedMunicipio) : null;
+    const q = normalize(document.getElementById('searchBox').value.trim());
+    return detalhado.filter(r => {
+      if (uf && r.uf !== uf) return false;
+      if (mun && normalize(r.municipio) !== mun) return false;
+      if (!q) return true;
+      return normalize(r.razao_social).includes(q) || normalize(r.nome_fantasia).includes(q) || normalize(r.socios).includes(q);
+    });
+  }
+
+  function sortRows(rows) {
+    return rows.slice().sort((a, b) => {
+      const va = (a[sortKey] || '').toString();
+      const vb = (b[sortKey] || '').toString();
+      return va.localeCompare(vb, 'pt-BR') * sortDir;
+    });
+  }
+
+  function formatDate(yyyymmdd) {
+    if (!yyyymmdd || yyyymmdd.length !== 8) return yyyymmdd || '—';
+    return yyyymmdd.slice(6, 8) + '/' + yyyymmdd.slice(4, 6) + '/' + yyyymmdd.slice(0, 4);
+  }
+
+  function renderTable() {
+    const filtered = sortRows(getFiltered());
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    currentPage = Math.min(currentPage, totalPages);
+    const start = (currentPage - 1) * pageSize;
+    const pageRows = filtered.slice(start, start + pageSize);
+
+    const tbody = document.querySelector('#cnpjTable tbody');
+    tbody.innerHTML = '';
+    pageRows.forEach(r => {
+      const tr = document.createElement('tr');
+      const cols = [
+        { val: r.cnpj, cls: 'mono' },
+        { val: r.razao_social },
+        { val: r.nome_fantasia || '—' },
+        { val: r.uf },
+        { val: r.municipio },
+        { val: r.socios || '—' },
+        { val: formatDate(r.data_inicio_atividade), cls: 'mono' },
+      ];
+      cols.forEach(c => {
+        const td = document.createElement('td');
+        if (c.cls) td.className = c.cls;
+        td.textContent = c.val;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    const localeSuffix = selectedMunicipio ? (' em ' + selectedMunicipio + '/' + ufFilter.value) : (ufFilter.value ? ' em ' + ufFilter.value : '');
+    document.getElementById('listaSub').textContent =
+      fmtInt(filtered.length) + ' empresa(s) encontrada(s)' + localeSuffix + '.';
+    document.getElementById('pageInfo').textContent = 'Página ' + currentPage + ' de ' + totalPages;
+    document.getElementById('prevPage').disabled = currentPage <= 1;
+    document.getElementById('nextPage').disabled = currentPage >= totalPages;
+
+    document.querySelectorAll('#cnpjTable th').forEach(th => {
+      const key = th.dataset.key;
+      let arrow = '';
+      if (key === sortKey) arrow = sortDir === 1 ? ' ▲' : ' ▼';
+      th.textContent = th.textContent.replace(/ ▲| ▼/g, '');
+      if (arrow) th.textContent += arrow;
+    });
+  }
+
+  document.querySelectorAll('#cnpjTable th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (sortKey === key) { sortDir *= -1; } else { sortKey = key; sortDir = 1; }
+      currentPage = 1;
+      renderTable();
+    });
+  });
+
+  ufFilter.addEventListener('change', () => {
+    selectedMunicipio = null;
+    currentPage = 1;
+    applyCrossFilterChange();
+  });
+  let searchTimer;
+  document.getElementById('searchBox').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; renderTable(); }, 200);
+  });
+  document.getElementById('prevPage').addEventListener('click', () => { currentPage--; renderTable(); });
+  document.getElementById('nextPage').addEventListener('click', () => { currentPage++; renderTable(); });
+
+  renderTable();
+
+  // ========================================================
+  // Footer notes
+  // ========================================================
+  (function renderNotes() {
+    const list = document.getElementById('notesList');
+
+    function addPlainItem(text) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      list.appendChild(li);
+    }
+
+    function addLinkItem(prefix, links, suffix) {
+      // links: [{text, href}, ...] — inserted as real <a> nodes, never via innerHTML.
+      const li = document.createElement('li');
+      li.appendChild(document.createTextNode(prefix));
+      links.forEach((lk, i) => {
+        const a = document.createElement('a');
+        a.href = lk.href;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = lk.text;
+        li.appendChild(a);
+        if (i < links.length - 1) li.appendChild(document.createTextNode(' e '));
+      });
+      if (suffix) li.appendChild(document.createTextNode(suffix));
+      list.appendChild(li);
+    }
+
+    addLinkItem(
+      'Tendência de ICMS: SEFAZ-SP, Relatório da Receita Tributária, tabela 1.12 (ICMS por CNAE). Fontes: ',
+      [
+        { text: 'arquivo consolidado 2009–2025', href: D.icms_meta.fontes_por_arquivo['2009-2025 (consolidado)'] },
+        { text: 'arquivo mensal jan–jul/2026', href: D.icms_meta.fontes_por_arquivo['2026-01 a 2026-07 (arquivo mensal individual, ainda nao incorporado ao consolidado)'] },
+      ],
+      '.'
+    );
+    addPlainItem('Censo de CNPJs (varejo, 4756-3/00): Receita Federal do Brasil, Dados Abertos do CNPJ, base de referência ' + D.cnpj_resumo.mes_referencia_base + '.');
+    addPlainItem('Valores de ICMS são nominais (não deflacionados). Comparações de longo prazo são afetadas pela inflação acumulada.');
+    addPlainItem('Não existe fonte pública de arrecadação de ICMS por CNPJ individual (sigilo fiscal, Art. 198 do CTN).');
+    D.icms_meta.limitacoes_e_observacoes.forEach(l => addPlainItem('ICMS (varejo) — ' + l));
+    D.cnpj_resumo.limitacoes_e_observacoes.forEach(l => addPlainItem('CNPJs (varejo) — ' + l));
+
+    if (D.icms_meta_manufatura) {
+      addLinkItem(
+        'Tendência de ICMS — fabricação (3220-5/00): mesma tabela 1.12 da SEFAZ-SP. Fontes: ',
+        [
+          { text: 'arquivo consolidado 2009–2025', href: D.icms_meta_manufatura.fontes_por_arquivo['2009-2025 (consolidado)'] },
+          { text: 'arquivo mensal 2026', href: D.icms_meta_manufatura.fontes_por_arquivo['2026 (arquivo mensal individual, ainda nao incorporado ao consolidado)'] },
+        ],
+        '.'
+      );
+      D.icms_meta_manufatura.limitacoes_e_observacoes.forEach(l => addPlainItem('ICMS (fabricação) — ' + l));
+    }
+    if (D.cnpj_resumo_manufatura) {
+      addPlainItem('Censo de CNPJs (fabricação, 3220-5/00): Receita Federal do Brasil, Dados Abertos do CNPJ, base de referência ' + D.cnpj_resumo_manufatura.mes_referencia_base + '.');
+      (D.cnpj_resumo_manufatura.limitacoes_e_observacoes || []).forEach(l => addPlainItem('CNPJs (fabricação) — ' + l));
+    }
+
+    document.getElementById('collectedAt').textContent =
+      'Censo de CNPJs (varejo) coletado em ' + new Date(D.cnpj_resumo.timestamp_execucao).toLocaleString('pt-BR') +
+      (D.cnpj_resumo_manufatura ? '. Censo de CNPJs (fabricação) coletado em ' + new Date(D.cnpj_resumo_manufatura.timestamp_execucao).toLocaleString('pt-BR') + '.' : '.');
+  })();
+
+  // ========================================================
+  // TAB: 18% x SIMPLES NACIONAL
+  // Illustrative revenue estimate: since real per-company revenue is never
+  // public (see disclaimers throughout), this reverses ICMS collected by a
+  // handful of plausible effective rates. Simples Nacional's Anexo I splits
+  // its single DAS payment across taxes by a fixed percentage per revenue
+  // bracket; the ICMS slice within that split is `nominal rate x ICMS share`
+  // for that bracket (Lei Complementar 123/2006, Anexo I). Faixa 6 is
+  // excluded because ICMS is collected outside Simples there.
+  // ========================================================
+  const RATE_SCENARIOS = [
+    { key: 'faixa1', label: 'Simples — Faixa 1 (até R$180 mil/ano)', rate: 0.0400 * 0.34 },
+    { key: 'faixa2', label: 'Simples — Faixa 2 (R$180–360 mil/ano)', rate: 0.0730 * 0.34 },
+    { key: 'faixa3', label: 'Simples — Faixa 3 (R$360–720 mil/ano)', rate: 0.0950 * 0.335 },
+    { key: 'faixa5', label: 'Simples — Faixa 5 (R$1,8–3,6 mi/ano)', rate: 0.1430 * 0.335 },
+    { key: 'normal', label: 'Regime normal (18% cheio)', rate: 0.18 },
+  ];
+
+  function sumIcms(rows) { return rows.reduce((s, d) => s + (d.valor_icms || 0), 0); }
+  function fmtMoneyFlex(mil) {
+    if (mil === null || mil === undefined) return '—';
+    const reais = mil * 1000;
+    if (Math.abs(reais) >= 1e9) return 'R$ ' + (reais / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' bi';
+    if (Math.abs(reais) >= 1e6) return 'R$ ' + (reais / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+    return fmtMoneyMil(mil);
+  }
+
+  let lastMonthRow, last12Rows, rows2025, icmsLastMonth, icmsLast12, icms2025;
+  function computeComparativoDerived() {
+    lastMonthRow = series[series.length - 1];
+    last12Rows = series.slice(-12);
+    rows2025 = series.filter(d => d.mes_referencia.startsWith('2025'));
+    icmsLastMonth = lastMonthRow.valor_icms;
+    icmsLast12 = sumIcms(last12Rows);
+    icms2025 = sumIcms(rows2025);
+  }
+  computeComparativoDerived();
+
+  function renderKpiComparativo() {
+    const wrap = document.getElementById('kpiComparativo');
+    wrap.innerHTML = '';
+    const faixa1 = RATE_SCENARIOS.find(s => s.key === 'faixa1');
+    const normal = RATE_SCENARIOS.find(s => s.key === 'normal');
+    const fatFaixa1 = icmsLast12 / faixa1.rate;
+    const fatNormal = icmsLast12 / normal.rate;
+    const tiles = [
+      { label: 'ICMS arrecadado (últimos 12 meses, SP)', value: fmtMoneyFlex(icmsLast12) },
+      { label: 'Faturamento estimado — regime normal (18%)', value: fmtMoneyFlex(fatNormal) },
+      { label: 'Faturamento estimado — Simples Faixa 1', value: fmtMoneyFlex(fatFaixa1) },
+      { label: 'Diferença entre os extremos', value: '≈' + Math.round(fatFaixa1 / fatNormal) + '×', sub: 'Faixa 1 vs. regime normal' },
+    ];
+    tiles.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'kpi-tile';
+      const label = document.createElement('div'); label.className = 'kpi-label'; label.textContent = t.label;
+      const value = document.createElement('div'); value.className = 'kpi-value'; value.textContent = t.value;
+      el.appendChild(label); el.appendChild(value);
+      if (t.sub) { const s = document.createElement('div'); s.className = 'kpi-sub'; s.textContent = t.sub; el.appendChild(s); }
+      wrap.appendChild(el);
+    });
+  }
+  renderKpiComparativo();
+
+  let chartCenariosInstance;
+  function renderChartCenarios() {
+    const labels = RATE_SCENARIOS.map(s => s.label);
+    const data = RATE_SCENARIOS.map(s => icmsLast12 / s.rate);
+    if (chartCenariosInstance) chartCenariosInstance.destroy();
+    chartCenariosInstance = new Chart(document.getElementById('chartCenarios'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Faturamento estimado (últimos 12 meses)',
+          data,
+          backgroundColor: cVar('--series-1'),
+          borderRadius: 3,
+          maxBarThickness: 40,
+          datalabels: {
+            display: true, anchor: 'end', align: 'end', clip: false,
+            color: cVar('--text-primary'), font: { size: 11, weight: '600' },
+            formatter: (v) => fmtMoneyFlex(v),
+          },
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 90 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => fmtMoneyFlex(ctx.parsed.x) } },
+        },
+        scales: {
+          x: { grid: { color: cVar('--gridline') }, ticks: { color: cVar('--text-muted') }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color: cVar('--text-primary') } },
+        },
+      },
+    });
+  }
+
+  let chartCenariosLinhaInstance;
+  function renderChartCenariosLinha() {
+    if (chartCenariosLinhaInstance) chartCenariosLinhaInstance.destroy();
+    const faixa1 = RATE_SCENARIOS.find(s => s.key === 'faixa1');
+    const faixa3 = RATE_SCENARIOS.find(s => s.key === 'faixa3');
+    const normal = RATE_SCENARIOS.find(s => s.key === 'normal');
+    const labels = series.map(d => d.mes_referencia);
+
+    function mkDataset(scenario, color) {
+      return {
+        label: scenario.label,
+        data: series.map(d => d.valor_icms != null ? d.valor_icms / scenario.rate : null),
+        borderColor: color,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.15,
+        spanGaps: true,
+        datalabels: {
+          display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1,
+          align: 'right', anchor: 'end', clip: false, offset: 4,
+          color, font: { size: 10, weight: '600' },
+          formatter: (v) => fmtMoneyFlex(v),
+        },
+      };
+    }
+
+    chartCenariosLinhaInstance = new Chart(document.getElementById('chartCenariosLinha'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          mkDataset(faixa1, cVar('--series-1')),
+          mkDataset(faixa3, cVar('--series-2')),
+          mkDataset(normal, cVar('--text-muted')),
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 90 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: cVar('--text-secondary'), boxWidth: 16, boxHeight: 2 } },
+          tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + fmtMoneyFlex(ctx.parsed.y) } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: cVar('--text-muted'), maxTicksLimit: 12 } },
+          y: { grid: { color: cVar('--gridline') }, ticks: { color: cVar('--text-muted'), callback: (v) => fmtMoneyFlex(v) }, beginAtZero: true },
+        },
+      },
+    });
+  }
+  renderChartCenarios();
+  renderChartCenariosLinha();
+
+  function renderTabelaComparativa() {
+    document.getElementById('colUltimoMesHead').textContent = 'Último mês (' + lastMonthRow.mes_referencia + ')';
+    document.getElementById('tabelaComparativaSub').textContent =
+      'Faturamento estimado = ICMS arrecadado ÷ alíquota efetiva do cenário. Apenas São Paulo.';
+    const tbody = document.querySelector('#tabelaComparativa tbody');
+    tbody.innerHTML = '';
+    RATE_SCENARIOS.forEach(s => {
+      const tr = document.createElement('tr');
+      const cells = [
+        s.label,
+        (s.rate * 100).toFixed(2).replace('.', ',') + '%',
+        fmtMoneyFlex(icmsLastMonth / s.rate),
+        fmtMoneyFlex(icmsLast12 / s.rate),
+        fmtMoneyFlex(icms2025 / s.rate),
+      ];
+      cells.forEach((val, i) => {
+        const td = document.createElement('td');
+        if (i > 0) td.className = 'num';
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+  renderTabelaComparativa();
+
+  // ========================================================
+  // Segment toggle: re-point every `let` dataset variable at the chosen
+  // segment's data, update the CNAE labels sprinkled through the page copy,
+  // reset per-tab UI state (filters, pagination) and re-run each tab's
+  // existing render pipeline. Nothing here is new rendering logic — it's the
+  // same functions called at load, just callable again with new data.
+  // ========================================================
+  function applySegment(key) {
+    activeSegment = key;
+    const ds = DATASETS[key];
+
+    document.getElementById('pageSubtitleCnae').textContent = ds.cnaeLabel + ' · ' + ds.descricao;
+    document.getElementById('tendCnaeLabel').textContent = ds.cnaeLabel;
+    document.getElementById('ufChartCnaeLabel').textContent = ds.cnaeLabel;
+    document.getElementById('comparativoCnaeLabel').textContent = ds.cnaeLabel;
+
+    // Tendência tab
+    series = ds.series;
+    trendCoef = ds.meta.tendencia_linear_simples;
+    renderKpiTendencia();
+    const activePreset = document.querySelector('#presetGroup .preset-btn[aria-pressed="true"]');
+    const months = activePreset && activePreset.dataset.months === 'all' ? 'all' : parseInt(activePreset ? activePreset.dataset.months : '36', 10);
+    renderIcmsLine(months);
+    renderIcmsYoy(months);
+    renderIcmsTable();
+
+    // CNPJs tab
+    resumo = ds.resumo;
+    porUf = ds.porUf;
+    porMunicipio = ds.porMunicipio;
+    detalhado = ds.detalhado;
+    ufFilter.value = '';
+    selectedMunicipio = null;
+    currentPage = 1;
+    sortKey = 'razao_social';
+    sortDir = 1;
+    renderUfDropdownOptions();
+    renderKpiCnpjs();
+    renderUfChart();
+    renderMunChart('');
+    updateActiveFilterChip();
+    renderTable();
+
+    // 18% x Simples Nacional tab
+    computeComparativoDerived();
+    renderKpiComparativo();
+    renderChartCenarios();
+    renderChartCenariosLinha();
+    renderTabelaComparativa();
+  }
+
+  document.querySelectorAll('#segmentGroup .preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.segment === activeSegment) return;
+      document.querySelectorAll('#segmentGroup .preset-btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      applySegment(btn.dataset.segment);
+    });
+  });
+}
+</script>
+<script>
+// data.js is loaded via fetch+retry rather than a plain <script src> — this
+// environment's local preview server intermittently resets the connection,
+// and a fresh fetch (new connection) reliably recovers where the browser's
+// own <script> loader would just fail once and stop. The fetched text is then
+// run as a genuine <script src="blob:..."> (not eval): indirect eval in this
+// sandboxed browser pane does not appear to leak top-level const/let into the
+// real global scope (confirmed directly — DASHBOARD_DATA stayed undefined
+// even though the eval itself threw no error), while a blob-URL script tag
+// executes with normal script semantics and no extra network round-trip.
+(async function loadDataAndStart() {
+  const MAX_ATTEMPTS = 6;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch('data-2026-09-22.js', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      await new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/javascript' }));
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = () => { URL.revokeObjectURL(url); resolve(); };
+        script.onerror = () => { URL.revokeObjectURL(url); reject(new Error('blob script failed to execute')); };
+        document.head.appendChild(script);
+      });
+      if (typeof DASHBOARD_DATA === 'undefined') throw new Error('DASHBOARD_DATA undefined after load');
+      initDashboard();
+      return;
+    } catch (e) {
+      if (attempt === MAX_ATTEMPTS) {
+        document.body.insertAdjacentHTML('afterbegin',
+          '<div style="background:#d03b3b;color:#fff;padding:12px 16px;text-align:center;font:14px system-ui;">' +
+          'Falha ao carregar os dados do painel (conexão instável). Recarregue a página.</div>');
+      } else {
+        await new Promise(r => setTimeout(r, 300 * attempt));
+      }
+    }
+  }
+})();
+</script>
+
+</body>
+</html>
